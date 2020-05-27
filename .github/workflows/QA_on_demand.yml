@@ -1,0 +1,27 @@
+# This workflow checks python code quality.
+
+name: Check Python Code Quality on demand
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  ondemand:
+    runs-on: ubuntu-latest
+    if: github.event.comment.body == 'Triggering test'
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Lint with pylama
+      run: |
+        pip install pylama
+        pylama
