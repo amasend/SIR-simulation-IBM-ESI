@@ -6,337 +6,186 @@ __all__ = [
 ]
 
 from simulation import groups_interface
-import random
+import math
 
 
 class SGroup(groups_interface.PopulationGroup):
-    def __init__(self, x: float, y: float, label: str, inf_dist: float, infection_prob: float, recover_prob: float,
-                 death_prob: float) -> None:
+    """
+    Class that represents susceptible people that can be infected. Has own
+    behaviour method infect() which define if person get infected or not.
 
-        super().__init__(x, y, label, inf_dist, infection_prob, recover_prob, death_prob)
+    Parameters
+    ----------
+    infection_prob: float, required
+        Probability to infect it should be value between 0.0 and 1.0.
+    **kwargs:
+        Attributes inherited from base abstract class PopulationGroup:
+        x: float, required
+            Instance starting position on X axis on cartesian grid defined by
+        container wrapper.
+        y: float, required
+            Instance starting position on Y axis on cartesian grid defined by
+        container wrapper.
+        label: string, required
+            Label of object instance.
+    """
 
-    def __del__(self):
-        pass
+    def __init__(self, infection_prob: float, **kwargs) -> None:
+        self.infection_probability = infection_prob
+        super().__init__(**kwargs)
 
-    def move(self, x_distance: float, y_distance: float, box_width: int,
-             box_height: int) -> bool:
+    def is_in_infection_area(self, member_x: float, member_y: float, member_inf_range: float) -> bool:
+        """
+        Method check if current instance is in infection area of infected
+        instance.
 
-        can_move = True
+        Parameters
+        ----------
+        member_x: float, required
+            Object to compare with position on X axis.
+        member_y: float, required
+            Object to compare with position on Y axis.
+        member_inf_range: float, required
+            Object infection area in with current instance could be infected.
 
-        if not 0 < self.x + x_distance < box_width:
-            can_move = False
+        Returns
+        -------
+        Return True if instance is in infection area of different infected
+        object or False if is not.
 
-        if not 0 < self.y + y_distance < box_height:
-            can_move = False
+        Example
+        -------
+        >>> s_member.is_in_infection_area(i_member.x, i_member.y,
+                                          i_member.infection_range)
+        """
 
-        if can_move:
-            self.x += x_distance
-            self.y += y_distance
+        distance = math.sqrt(math.pow(member_x - self.x, 2) + math.pow(member_y - self.y, 2))
 
+        if distance < member_inf_range:
             return True
         else:
             return False
 
-    def is_in_area(self, member_x: float, member_y: float, member_inf_dis: float) -> bool:
-        if self.x > member_x:
-            x_difference = self.x - member_x
-        else:
-            x_difference = member_x - self.x
+    def infect(self) -> bool:
+        """
+        Method checks if current instance get infected based on attribute
+        infection_probability.
 
-        if self.y > member_y:
-            y_difference = self.y - member_y
-        else:
-            y_difference = member_y - self.y
+        Returns
+        -------
+        True if instance get infected or False if not. Logic base on
+        random.choices() method.
 
-        if x_difference < member_inf_dis or \
-                y_difference < member_inf_dis:
-            return True
-        else:
-            return False
-
-    def infect(self):
-        x = random.random()
-
-        if x < self.infection_probability:
-            return True
-        else:
-            return False
-
-    def recover(self):
-        x = random.random()
-
-        if x < self.recover_probability:
-            return True
-        else:
-            return False
-
-    def death(self):
-        x = random.random()
-
-        if x < self.death_probability:
-            return True
-        else:
-            return False
-
-    # Documentation inheritance handling
-    __doc__ = groups_interface.PopulationGroup.__doc__
-    move.__doc__ = groups_interface.PopulationGroup.move.__doc__
-    is_in_area.__doc__ = groups_interface.PopulationGroup.is_in_area.__doc__
-    infect.__doc__ = groups_interface.PopulationGroup.infect.__doc__
-    recover.__doc__ = groups_interface.PopulationGroup.recover.__doc__
-    death.__doc__ = groups_interface.PopulationGroup.death.__doc__
+        Example
+        -------
+        >>> s_member.infect()
+        """
+        return super().behaviour_probability(self.infection_probability)
 
 
 class IGroup(groups_interface.PopulationGroup):
-    def __init__(self, x: float, y: float, label: str, inf_dist: float, infection_prob: float, recover_prob: float,
-                 death_prob: float) -> None:
+    """
+    Class that represents already infected people. Class define two behaviours
+    for infected people recover() or death().
 
-        super().__init__(x, y, label, inf_dist, infection_prob, recover_prob, death_prob)
+    Parameters
+    ----------
+    infection_range: float, required
+        Area around IGroup instance in which SGroup instance could be infected.
+        It is a radius value.
+    recover_prob: float, required
+        Probability to trigger the recover behaviour it should be value
+        between 0.0 and 1.0.
+    death_prob: float, required
+        Probability trigger the death behaviour it should be value
+        between 0.0 and 1.0.
+    **kwargs:
+        Attributes inherited from base abstract class PopulationGroup:
+        x: float, required
+            Instance starting position on X axis on cartesian grid defined by
+        container wrapper.
+        y: float, required
+            Instance starting position on Y axis on cartesian grid defined by
+        container wrapper.
+        label: string, required
+            Label of object instance
 
-    def __del__(self):
-        pass
+    """
+    def __init__(self, infection_range: float, recover_prob: float, death_prob: float, **kwargs) -> None:
+        self.recover_probability = recover_prob
+        self.death_probability = death_prob
+        self.infection_range = infection_range
+        super().__init__(**kwargs)
 
-    def move(self, x_distance: float, y_distance: float, box_width: int,
-             box_height: int) -> bool:
+    def recover(self) -> bool:
+        """
+        Method checks if current instance get recovered based on attribute
+        recover_probability.
 
-        can_move = True
+        Returns
+        -------
+        True if instance get recovered or False if not. Logic base on
+        random.choices() method.
 
-        if not 0 < self.x + x_distance < box_width:
-            can_move = False
+        Example
+        -------
+        >>> i_member.recover()
+        """
+        return super().behaviour_probability(self.recover_probability)
 
-        if not 0 < self.y + y_distance < box_height:
-            can_move = False
+    def death(self) -> bool:
+        """
+        Method checks if current instance died based on attribute
+        death_probability.
 
-        if can_move:
-            self.x += x_distance
-            self.y += y_distance
+        Returns
+        -------
+        True if instance died or False if not. Logic base on
+        random.choices() method.
 
-            return True
-        else:
-            return False
-
-    def is_in_area(self, member_x: float, member_y: float, member_inf_dis: float) -> bool:
-        if self.x > member_x:
-            x_difference = self.x - member_x
-        else:
-            x_difference = member_x - self.x
-
-        if self.y > member_y:
-            y_difference = self.y - member_y
-        else:
-            y_difference = member_y - self.y
-
-        if x_difference < member_inf_dis or \
-                y_difference < member_inf_dis:
-            return True
-        else:
-            return False
-
-    def infect(self):
-        x = random.random()
-
-        if x < self.infection_probability:
-            return True
-        else:
-            return False
-
-    def recover(self):
-        x = random.random()
-
-        if x < self.recover_probability:
-            return True
-        else:
-            return False
-
-    def death(self):
-        x = random.random()
-
-        if x < self.death_probability:
-            return True
-        else:
-            return False
-
-    # Documentation inheritance handling
-    __doc__ = groups_interface.PopulationGroup.__doc__
-    move.__doc__ = groups_interface.PopulationGroup.move.__doc__
-    is_in_area.__doc__ = groups_interface.PopulationGroup.is_in_area.__doc__
-    infect.__doc__ = groups_interface.PopulationGroup.infect.__doc__
-    recover.__doc__ = groups_interface.PopulationGroup.recover.__doc__
-    death.__doc__ = groups_interface.PopulationGroup.death.__doc__
+        Example
+        -------
+        >>> i_member.death()
+        """
+        return super().behaviour_probability(self.death_probability)
 
 
 class RGroup(groups_interface.PopulationGroup):
-    def __init__(self, x: float, y: float, label: str, inf_dist: float, infection_prob: float = 0,
-                 recover_prob: float = 0, death_prob: float = 0) -> None:
+    """
+    Class represent people that can not be infected second time. Instances of
+    this class do not define specific behaviours.
 
-        super().__init__(x, y, label, inf_dist, infection_prob, recover_prob, death_prob)
-
-    def __del__(self):
-        pass
-
-    def move(self, x_distance: float, y_distance: float, box_width: int,
-             box_height: int) -> bool:
-
-        can_move = True
-
-        if not 0 < self.x + x_distance < box_width:
-            can_move = False
-
-        if not 0 < self.y + y_distance < box_height:
-            can_move = False
-
-        if can_move:
-            self.x += x_distance
-            self.y += y_distance
-
-            return True
-        else:
-            return False
-
-    def is_in_area(self, member_x: float, member_y: float, member_inf_dis: float) -> bool:
-        if self.x > member_x:
-            x_difference = self.x - member_x
-        else:
-            x_difference = member_x - self.x
-
-        if self.y > member_y:
-            y_difference = self.y - member_y
-        else:
-            y_difference = member_y - self.y
-
-        if x_difference < member_inf_dis or \
-                y_difference < member_inf_dis:
-            return True
-        else:
-            return False
-
-    def infect(self):
-        x = random.random()
-
-        if x < self.infection_probability:
-            return True
-        else:
-            return False
-
-    def recover(self):
-        x = random.random()
-
-        if x < self.recover_probability:
-            return True
-        else:
-            return False
-
-    def death(self):
-        x = random.random()
-
-        if x < self.death_probability:
-            return True
-        else:
-            return False
-
-    # Documentation inheritance handling
-    __doc__ = groups_interface.PopulationGroup.__doc__
-    move.__doc__ = groups_interface.PopulationGroup.move.__doc__
-    is_in_area.__doc__ = groups_interface.PopulationGroup.is_in_area.__doc__
-    infect.__doc__ = groups_interface.PopulationGroup.infect.__doc__
-    recover.__doc__ = groups_interface.PopulationGroup.recover.__doc__
-    death.__doc__ = groups_interface.PopulationGroup.death.__doc__
+    Parameters
+    ----------
+    x: float, required
+        Instance starting position on X axis on cartesian grid defined by
+        container wrapper.
+    y: float, required
+        Instance starting position on Y axis on cartesian grid defined by
+        container wrapper.
+    label: string, required
+            Label of object instance
+    """
+    def __init__(self, x: float, y: float, label: str) -> None:
+        super().__init__(x, y, label)
 
 
 class DGroup(groups_interface.PopulationGroup):
-    def __init__(self, x: float, y: float, label: str, inf_dist: float,
-                 infection_prob: float = 0, recover_prob: float = 0,
-                 death_prob: float = 0) -> None:
+    """
+    Class represent people that died and can not be infected second time.
+    Instances of this class do not define specific behaviours.
 
-        super().__init__(x, y, label, inf_dist, infection_prob, recover_prob, death_prob)
-
-    def __del__(self):
-        pass
-
-    def move(self, x_distance: float, y_distance: float, box_width: int,
-             box_height: int) -> bool:
-
-        can_move = True
-
-        if not 0 < self.x + x_distance < box_width:
-            can_move = False
-
-        if not 0 < self.y + y_distance < box_height:
-            can_move = False
-
-        if can_move:
-            self.x += x_distance
-            self.y += y_distance
-
-            return True
-        else:
-            return False
-
-    def is_in_area(self, member_x: float, member_y: float, member_inf_dis: float) -> bool:
-        if self.x > member_x:
-            x_difference = self.x - member_x
-        else:
-            x_difference = member_x - self.x
-
-        if self.y > member_y:
-            y_difference = self.y - member_y
-        else:
-            y_difference = member_y - self.y
-
-        if x_difference < member_inf_dis or \
-                y_difference < member_inf_dis:
-            return True
-        else:
-            return False
-
-    def infect(self):
-        x = random.random()
-
-        if x < self.infection_probability:
-            return True
-        else:
-            return False
-
-    def recover(self):
-        x = random.random()
-
-        if x < self.recover_probability:
-            return True
-        else:
-            return False
-
-    def death(self):
-        x = random.random()
-
-        if x < self.death_probability:
-            return True
-        else:
-            return False
-
-    # Documentation inheritance handling
-    __doc__ = groups_interface.PopulationGroup.__doc__
-    move.__doc__ = groups_interface.PopulationGroup.move.__doc__
-    is_in_area.__doc__ = groups_interface.PopulationGroup.is_in_area.__doc__
-    infect.__doc__ = groups_interface.PopulationGroup.infect.__doc__
-    recover.__doc__ = groups_interface.PopulationGroup.recover.__doc__
-    death.__doc__ = groups_interface.PopulationGroup.death.__doc__
-
-
-s_member = SGroup(1, 1, "s_member1", 0.25, 0.25, 0.15, 0.10)
-i_member = IGroup(1, 1.25, "i_member1", 0.25, 0.25, 0.15, 0.10)
-
-if s_member.is_in_area(i_member.x, i_member.y, i_member.infection_distance):
-    print("{smem} is in infection area of {imem}".format(smem=s_member.label, imem=i_member.label))
-
-    i = 0
-
-    while not s_member.infect():
-        i += 1
-
-    print("{smem} is infected. New IGroup instance created.".format(smem=s_member.label))
-    print("Infected in {att} attempt".format(att=i))
-
-    i_member2 = IGroup(s_member.x, s_member.y, "i_member2", 0.25, 0.25, 0.15, 0.10)
-
-    del s_member
+    Parameters
+    ----------
+    x: float, required
+        Instance starting position on X axis on cartesian grid defined by
+        container wrapper.
+    y: float, required
+        Instance starting position on Y axis on cartesian grid defined by
+        container wrapper.
+    label: string, required
+        Label of object instance
+    """
+    def __init__(self, x: float, y: float, label: str) -> None:
+        super().__init__(x, y, label)
 
