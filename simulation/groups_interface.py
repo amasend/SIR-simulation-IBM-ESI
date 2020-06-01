@@ -17,7 +17,7 @@ class PopulationGroup(metaclass=ABCMeta):
         self.x = x
         self.y = y
         self.label = label
-
+        
     def move(self, x_distance: float, y_distance: float, box_width: int,
              box_height: int) -> bool:
         """
@@ -44,3 +44,4 @@ class PopulationGroup(metaclass=ABCMeta):
         chance = random.choices([True, False], [behaviour_prob, 1 - behaviour_prob])
 
         return chance[0]
+      

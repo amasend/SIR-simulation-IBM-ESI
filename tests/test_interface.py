@@ -29,6 +29,7 @@ class SGroupTestCase(unittest.TestCase):
                          msg="Instance move incorrect in Y axis.")
 
 
+
 class IGroupTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.i_member = groups.IGroup(infection_range=1.2, recover_prob=0.15,
@@ -98,6 +99,6 @@ class SGroupAndIGroupInteractionTestCase(unittest.TestCase):
                              msg="SGroup instance could be infected with 0%"
                                  "chance.")
 
-
+            
 if __name__ == '__main__':
     unittest.main()

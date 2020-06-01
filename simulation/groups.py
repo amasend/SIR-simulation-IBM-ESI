@@ -111,6 +111,7 @@ class IGroup(groups_interface.PopulationGroup):
             Label of object instance
 
     """
+    
     def __init__(self, infection_range: float, recover_prob: float, death_prob: float, **kwargs) -> None:
         self.recover_probability = recover_prob
         self.death_probability = death_prob
@@ -188,4 +189,3 @@ class DGroup(groups_interface.PopulationGroup):
     """
     def __init__(self, x: float, y: float, label: str) -> None:
         super().__init__(x, y, label)
-

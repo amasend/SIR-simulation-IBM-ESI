@@ -128,9 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-# PyCharm
+# PyCharm files
 .idea
 
 # Sandbox file
 simulation/sandbox.py
-
