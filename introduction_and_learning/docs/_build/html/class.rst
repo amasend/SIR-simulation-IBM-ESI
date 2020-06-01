@@ -1,2 +1,0 @@
-.. autofunction:: Bookshelf
-   :members:
