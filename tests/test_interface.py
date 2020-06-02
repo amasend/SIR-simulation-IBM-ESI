@@ -4,134 +4,117 @@ from simulation import groups
 
 class SGroupTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.s_member = groups.SGroup(5, 5, "member1", 0.25, 0.3, 0.2, 0.2)
-        self.s_member2 = groups.SGroup(4, 2, "member2", 0.25, 0.3, 0.2, 0.2)
+        self.s_member = groups.SGroup(x=0, y=0, infection_prob=0.25)
 
     def test_01__check_if_constructor_work_correctly__return_SGroup_instance(self):
         self.assertIsInstance(self.s_member, groups.SGroup,
                               msg="Constructor was not return a SGroup instance.")
 
-    def test_02__check_if_change_instance_position_in_grid_system__return_bool(self):
-        self.assertIsInstance(self.s_member.move(1, 2, 10, 10), bool,
-                              msg="Method move() was not return a bool object.")
-
-    def test_03__check_if_method_correctly_is_in_area__return_bool(self):
-        self.assertIsInstance(self.s_member.is_in_area(self.s_member2.x,
-                                                       self.s_member2.y,
-                                                       self.s_member2.infection_distance), bool,
-                              msg="Method is_in_area() was not return "
-                                  "a bool object.")
-
-    def test_04__check_if_method_returns_new_instance__return_bool(self):
+    def test_02__check_if_method_returns_new_instance__return_bool(self):
         self.assertIsInstance(self.s_member.infect(), bool,
                               msg="Method infect() was not return bool.")
 
-    def test_05__check_if_instance_was_recovered__return_bool(self):
-        self.assertIsInstance(self.s_member.recover(), bool,
-                              msg="Method recover() was not return bool.")
+    def test_03__check_if_change_instance_position_in_grid_system__return_bool(self):
+        self.assertIsInstance(self.s_member.move(1, 2, 10, 10), bool,
+                              msg="Method move() was not return a bool object.")
 
-    def test_06__check_if_instance_died__return_bool(self):
-        self.assertIsInstance(self.s_member.death(), bool,
-                              msg="Method recover() was not return bool.")
+    def test_04__check_if_instance_move_to_correct_place_in_X_axis(self):
+        self.s_member.move(5, 3, 10, 10)
+        self.assertEqual(self.s_member.x, 5,
+                         msg="Instance move incorrect in X axis.")
+
+    def test_05__check_if_instance_move_to_correct_place_in_Y_axis(self):
+        self.s_member.move(5, 3, 10, 10)
+        self.assertEqual(self.s_member.y, 3,
+                         msg="Instance move incorrect in Y axis.")
+
+    def test_06__check_if_instance_can_move_outside_container_in_X_axis(self):
+        result = self.s_member.move(11, 0, 10, 10)
+
+        self.assertFalse(result, msg="Instance can move outside the "
+                                     "container in X axis.")
+
+    def test_07__check_if_instance_can_move_outside_container_in_Y_axis(self):
+        result = self.s_member.move(0, 11, 10, 10)
+
+        self.assertFalse(result, msg="Instance can move outside the "
+                                     "container in Y axis.")
+
+    def test_08_check_if_auto_labeling_logic_correctly_assign_labels(self):
+        label = "susceptible_{x}".format(x=next(self.s_member.id) - 1)
+        self.assertEqual(self.s_member.label, label,
+                         msg="Auto labeling logic incorrect assign labels.")
 
 
 class IGroupTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.i_member = groups.IGroup(5, 5, "member1", 0.25, 0.3, 0.2, 0.2)
-        self.i_member2 = groups.IGroup(4, 2, "member2", 0.25, 0.3, 0.2, 0.2)
+        self.i_member = groups.IGroup(x=1, y=1, infection_range=1.2, recover_prob=0.15,
+                                      death_prob=0.02)
 
-    def test_01__check_if_constructor_work_correctly__return_SGroup_instance(self):
+    def test_01__check_if_constructor_work_correctly__return_IGroup_instance(self):
         self.assertIsInstance(self.i_member, groups.IGroup,
                               msg="Constructor was not return a IGroup instance.")
 
-    def test_02__check_if_change_instance_position_in_grid_system__return_bool(self):
-        self.assertIsInstance(self.i_member.move(1, 2, 10, 10), bool,
-                              msg="Method move() was not return a bool object.")
-
-    def test_03__check_if_method_correctly_is_in_area__return_bool(self):
-        self.assertIsInstance(self.i_member.is_in_area(self.i_member2.x,
-                                                       self.i_member2.y,
-                                                       self.i_member2.infection_distance), bool,
-                              msg="Method is_in_area() was not return "
-                                  "a bool object.")
-
-    def test_04__check_if_method_returns_new_instance__return_bool(self):
-        self.assertIsInstance(self.i_member.infect(), bool,
-                              msg="Method infect() was not return bool.")
-
-    def test_05__check_if_instance_was_recovered__return_bool(self):
+    def test_02__check_if_instance_was_recovered__return_bool(self):
         self.assertIsInstance(self.i_member.recover(), bool,
                               msg="Method recover() was not return bool.")
 
-    def test_06__check_if_instance_died__return_bool(self):
+    def test_03__check_if_instance_died__return_bool(self):
         self.assertIsInstance(self.i_member.death(), bool,
                               msg="Method recover() was not return bool.")
 
 
-class RGroupTestCase(unittest.TestCase):
+class SGroupAndIGroupInteractionTestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.s_member = groups.SGroup(x=0, y=0, infection_prob=0.25)
+        cls.i_member = groups.IGroup(x=0, y=0, infection_range=1.2,
+                                     recover_prob=0.15, death_prob=0.02)
+
     def setUp(self) -> None:
-        self.r_member = groups.RGroup(5, 5, "member1", 0.25, 0.3, 0.2, 0.2)
-        self.r_member2 = groups.RGroup(4, 2, "member2", 0.25, 0.3, 0.2, 0.2)
 
-    def test_01__check_if_constructor_work_correctly__return_SGroup_instance(self):
-        self.assertIsInstance(self.r_member, groups.RGroup,
-                              msg="Constructor was not return a RGroup instance.")
+        self.container_width = 10
+        self.container_height = 10
 
-    def test_02__check_if_change_instance_position_in_grid_system__return_bool(self):
-        self.assertIsInstance(self.r_member.move(1, 2, 10, 10), bool,
-                              msg="Method move() was not return a bool object.")
+    def test_02__check_if_s_member_is_inside_i_member_infection_range(self):
+        self.s_member.move(5, 3, self.container_width, self.container_height)
+        self.i_member.move(4, 3, self.container_width, self.container_height)
+        # Note: Distance between s_member(5, 3) and i_member(4, 3) is 1 and
+        # infect radius is 1.2 so 1 < 1.2 and method should return True.
+        result = self.s_member.is_in_infection_area(self.i_member.x, self.i_member.y,
+                                                    self.i_member.infection_range)
 
-    def test_03__check_if_method_correctly_is_in_area__return_bool(self):
-        self.assertIsInstance(self.r_member.is_in_area(self.r_member2.x,
-                                                       self.r_member2.y,
-                                                       self.r_member2.infection_distance), bool,
-                              msg="Method is_in_area() was not return "
-                                  "a bool object.")
+        self.assertTrue(result, msg="Invalid logic in checking if s_member "
+                                    "is inside i_member infection_range.")
 
-    def test_04__check_if_method_returns_new_instance__return_bool(self):
-        self.assertIsInstance(self.r_member.infect(), bool,
-                              msg="Method infect() was not return bool.")
+    def test_03__check_if_s_member_is_outside_i_member_infection_range(self):
+        self.i_member.move(-3, -2, self.container_width, self.container_height)
+        # Note: Now i_member position is (1, 2) and distance is about 4.5 so
+        # 1.2 < 4.6 and method should return False.
+        result = self.s_member.is_in_infection_area(self.i_member.x, self.i_member.y,
+                                                    self.i_member.infection_range)
 
-    def test_05__check_if_instance_was_recovered__return_bool(self):
-        self.assertIsInstance(self.r_member.recover(), bool,
-                              msg="Method recover() was not return bool.")
+        self.assertFalse(result, msg="Invalid logic in checking if s_member "
+                                     "is outside i_member infection_range.")
 
-    def test_06__check_if_instance_died__return_bool(self):
-        self.assertIsInstance(self.r_member.death(), bool,
-                              msg="Method recover() was not return bool.")
+    def test_04__check_if_s_member_could_not_be_infected_with_100_chance(self):
+        self.i_member.move(4, 3, self.container_width, self.container_height)
+        self.s_member.infection_probability = 1
 
+        if self.s_member.is_in_infection_area(self.i_member.x, self.i_member.y,
+                                              self.i_member.infection_range):
+            self.assertTrue(self.s_member.infect(),
+                            msg="SGroup instance could not be infected with"
+                                "100% chance.")
 
-class DGroupTestCase(unittest.TestCase):
-    def setUp(self) -> None:
-        self.d_member = groups.DGroup(5, 5, "member1", 0.25, 0.3, 0.2, 0.2)
-        self.d_member2 = groups.DGroup(4, 2, "member2", 0.25, 0.3, 0.2, 0.2)
+    def test_05__check_if_s_member_could_be_infected_with_0_chance(self):
+        self.s_member.infection_probability = 0
 
-    def test_01__check_if_constructor_work_correctly__return_SGroup_instance(self):
-        self.assertIsInstance(self.d_member, groups.DGroup,
-                              msg="Constructor was not return a SGroup instance.")
-
-    def test_02__check_if_change_instance_position_in_grid_system__return_bool(self):
-        self.assertIsInstance(self.d_member.move(1, 2, 10, 10), bool,
-                              msg="Method move() was not return a bool object.")
-
-    def test_03__check_if_method_correctly_is_in_area__return_bool(self):
-        self.assertIsInstance(self.d_member.is_in_area(self.d_member2.x,
-                                                       self.d_member2.y,
-                                                       self.d_member2.infection_distance), bool,
-                              msg="Method is_in_area() was not return "
-                                  "a bool object.")
-
-    def test_04__check_if_method_returns_new_instance__return_bool(self):
-        self.assertIsInstance(self.d_member.infect(), bool,
-                              msg="Method infect() was not return bool.")
-
-    def test_05__check_if_instance_was_recovered__return_bool(self):
-        self.assertIsInstance(self.d_member.recover(), bool,
-                              msg="Method recover() was not return bool.")
-
-    def test_06__check_if_instance_died__return_bool(self):
-        self.assertIsInstance(self.d_member.death(), bool,
-                              msg="Method recover() was not return bool.")
+        if self.s_member.is_in_infection_area(self.i_member.x, self.i_member.y,
+                                              self.i_member.infection_range):
+            self.assertFalse(self.s_member.infect(),
+                             msg="SGroup instance could be infected with 0%"
+                                 "chance.")
 
 
 if __name__ == '__main__':
