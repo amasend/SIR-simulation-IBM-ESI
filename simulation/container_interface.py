@@ -2,7 +2,7 @@ __all__ = [
     'ContainerInterface'
 ]
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from simulation import groups
 import random
 
@@ -27,7 +27,7 @@ class ContainerInterface(metaclass=ABCMeta):
         self.rmember = ''
         self.dmember = ''
 
-    def count_objects_in_list(self, class_definition: 'classdef') -> int:
+    def count_objects_in_list(self, class_definition: 'classtype') -> int:
         """
         Method counts amount on given class type in object_list attribute.
         """
