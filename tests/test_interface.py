@@ -4,7 +4,7 @@ from simulation import groups
 
 class SGroupTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.s_member = groups.SGroup(infection_prob=0.25, label="s_member", x=0, y=0)
+        self.s_member = groups.SGroup(x=0, y=0, infection_prob=0.25)
 
     def test_01__check_if_constructor_work_correctly__return_SGroup_instance(self):
         self.assertIsInstance(self.s_member, groups.SGroup,
@@ -28,12 +28,28 @@ class SGroupTestCase(unittest.TestCase):
         self.assertEqual(self.s_member.y, 3,
                          msg="Instance move incorrect in Y axis.")
 
+    def test_06__check_if_instance_can_move_outside_container_in_X_axis(self):
+        result = self.s_member.move(11, 0, 10, 10)
+
+        self.assertFalse(result, msg="Instance can move outside the "
+                                     "container in X axis.")
+
+    def test_07__check_if_instance_can_move_outside_container_in_Y_axis(self):
+        result = self.s_member.move(0, 11, 10, 10)
+
+        self.assertFalse(result, msg="Instance can move outside the "
+                                     "container in Y axis.")
+
+    def test_08_check_if_auto_labeling_logic_correctly_assign_labels(self):
+        label = "susceptible_{x}".format(x=next(self.s_member.id) - 1)
+        self.assertEqual(self.s_member.label, label,
+                         msg="Auto labeling logic incorrect assign labels.")
 
 
 class IGroupTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.i_member = groups.IGroup(infection_range=1.2, recover_prob=0.15,
-                                      death_prob=0.02, label="i_member", x=1, y=1)
+        self.i_member = groups.IGroup(x=1, y=1, infection_range=1.2, recover_prob=0.15,
+                                      death_prob=0.02)
 
     def test_01__check_if_constructor_work_correctly__return_IGroup_instance(self):
         self.assertIsInstance(self.i_member, groups.IGroup,
@@ -51,11 +67,12 @@ class IGroupTestCase(unittest.TestCase):
 class SGroupAndIGroupInteractionTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.s_member = groups.SGroup(infection_prob=0.25, label="s_member", x=0, y=0)
-        cls.i_member = groups.IGroup(infection_range=1.2, recover_prob=0.15,
-                                     death_prob=0.02, label="i_member", x=0, y=0)
+        cls.s_member = groups.SGroup(x=0, y=0, infection_prob=0.25)
+        cls.i_member = groups.IGroup(x=0, y=0, infection_range=1.2,
+                                     recover_prob=0.15, death_prob=0.02)
 
     def setUp(self) -> None:
+
         self.container_width = 10
         self.container_height = 10
 
@@ -99,6 +116,6 @@ class SGroupAndIGroupInteractionTestCase(unittest.TestCase):
                              msg="SGroup instance could be infected with 0%"
                                  "chance.")
 
-            
+
 if __name__ == '__main__':
     unittest.main()

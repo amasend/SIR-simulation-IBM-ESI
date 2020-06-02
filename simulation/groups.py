@@ -6,6 +6,7 @@ __all__ = [
 ]
 
 from simulation import groups_interface
+from itertools import count
 import math
 
 
@@ -16,25 +17,30 @@ class SGroup(groups_interface.PopulationGroup):
 
     Parameters
     ----------
+    x: float, required
+        Instance starting position on X axis on cartesian grid defined by
+        container wrapper.
+    y: float, required
+        Instance starting position on Y axis on cartesian grid defined by
+        container wrapper.
     infection_prob: float, required
         Probability to infect it should be value between 0.0 and 1.0.
-    **kwargs:
-        Attributes inherited from base abstract class PopulationGroup:
-        x: float, required
-            Instance starting position on X axis on cartesian grid defined by
-        container wrapper.
-        y: float, required
-            Instance starting position on Y axis on cartesian grid defined by
-        container wrapper.
-        label: string, required
-            Label of object instance.
+    prefix: str, optional
+        Prefix for auto labeling logic which is {prefix}_{id}.
+        Should not be changed. Default value: susceptible
     """
 
-    def __init__(self, infection_prob: float, **kwargs) -> None:
-        self.infection_probability = infection_prob
-        super().__init__(**kwargs)
+    id = count(1)
 
-    def is_in_infection_area(self, member_x: float, member_y: float, member_inf_range: float) -> bool:
+    def __init__(self, x: float, y: float, infection_prob: float,
+                 prefix: str = 'susceptible') -> None:
+        self.x = x
+        self.y = y
+        self.infection_probability = infection_prob
+        super().__init__(x, y, prefix)
+
+    def is_in_infection_area(self, member_x: float, member_y: float,
+                             member_inf_range: float) -> bool:
         """
         Method check if current instance is in infection area of infected
         instance.
@@ -59,7 +65,8 @@ class SGroup(groups_interface.PopulationGroup):
                                           i_member.infection_range)
         """
 
-        distance = math.sqrt(math.pow(member_x - self.x, 2) + math.pow(member_y - self.y, 2))
+        distance = math.sqrt(math.pow(member_x - self.x, 2)
+                             + math.pow(member_y - self.y, 2))
 
         if distance < member_inf_range:
             return True
@@ -80,6 +87,7 @@ class SGroup(groups_interface.PopulationGroup):
         -------
         >>> s_member.infect()
         """
+
         return super().behaviour_probability(self.infection_probability)
 
 
@@ -90,6 +98,12 @@ class IGroup(groups_interface.PopulationGroup):
 
     Parameters
     ----------
+    x: float, required
+        Instance starting position on X axis on cartesian grid defined by
+        container wrapper.
+    y: float, required
+        Instance starting position on Y axis on cartesian grid defined by
+        container wrapper.
     infection_range: float, required
         Area around IGroup instance in which SGroup instance could be infected.
         It is a radius value.
@@ -99,24 +113,19 @@ class IGroup(groups_interface.PopulationGroup):
     death_prob: float, required
         Probability trigger the death behaviour it should be value
         between 0.0 and 1.0.
-    **kwargs:
-        Attributes inherited from base abstract class PopulationGroup:
-        x: float, required
-            Instance starting position on X axis on cartesian grid defined by
-        container wrapper.
-        y: float, required
-            Instance starting position on Y axis on cartesian grid defined by
-        container wrapper.
-        label: string, required
-            Label of object instance
-
+    prefix: str, optional
+        Prefix for auto labeling logic which is {prefix}_{id}.
+        Should not be changed. Default value: infected.
     """
-    
-    def __init__(self, infection_range: float, recover_prob: float, death_prob: float, **kwargs) -> None:
+
+    id = count(1)
+
+    def __init__(self, x: float, y: float, infection_range: float,
+                 recover_prob: float, death_prob: float, prefix: str = 'infected') -> None:
         self.recover_probability = recover_prob
         self.death_probability = death_prob
         self.infection_range = infection_range
-        super().__init__(**kwargs)
+        super().__init__(x, y, prefix)
 
     def recover(self) -> bool:
         """
@@ -132,6 +141,7 @@ class IGroup(groups_interface.PopulationGroup):
         -------
         >>> i_member.recover()
         """
+
         return super().behaviour_probability(self.recover_probability)
 
     def death(self) -> bool:
@@ -148,6 +158,7 @@ class IGroup(groups_interface.PopulationGroup):
         -------
         >>> i_member.death()
         """
+
         return super().behaviour_probability(self.death_probability)
 
 
@@ -164,11 +175,15 @@ class RGroup(groups_interface.PopulationGroup):
     y: float, required
         Instance starting position on Y axis on cartesian grid defined by
         container wrapper.
-    label: string, required
-            Label of object instance
+    prefix: str, optional
+        Prefix for auto labeling logic which is {prefix}_{id}.
+        Should not be changed. Default value: recovered.
     """
-    def __init__(self, x: float, y: float, label: str) -> None:
-        super().__init__(x, y, label)
+
+    id = count(1)
+
+    def __init__(self, x: float, y: float, prefix: str = 'recovered') -> None:
+        super().__init__(x, y, prefix)
 
 
 class DGroup(groups_interface.PopulationGroup):
@@ -184,8 +199,13 @@ class DGroup(groups_interface.PopulationGroup):
     y: float, required
         Instance starting position on Y axis on cartesian grid defined by
         container wrapper.
-    label: string, required
-        Label of object instance
+    prefix: str, optional
+        Prefix for auto labeling logic which is {prefix}_{id}.
+        Should not be changed. Default value: dead.
     """
-    def __init__(self, x: float, y: float, label: str) -> None:
-        super().__init__(x, y, label)
+
+    id = count(1)
+
+    def __init__(self, x: float, y: float, prefix: str = 'dead') -> None:
+        super().__init__(x, y, prefix)
+
