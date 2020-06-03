@@ -25,19 +25,13 @@ class SGroup(groups_interface.PopulationGroup):
         container wrapper.
     infection_prob: float, required
         Probability to infect it should be value between 0.0 and 1.0.
-    prefix: str, optional
-        Prefix for auto labeling logic which is {prefix}_{id}.
-        Should not be changed. Default value: susceptible
     """
 
-    id = count(1)
-
-    def __init__(self, x: float, y: float, infection_prob: float,
-                 prefix: str = 'susceptible') -> None:
+    def __init__(self, x: float, y: float, infection_prob: float) -> None:
         self.x = x
         self.y = y
         self.infection_probability = infection_prob
-        super().__init__(x, y, prefix)
+        super().__init__(x, y)
 
     def is_in_infection_area(self, member_x: float, member_y: float,
                              member_inf_range: float) -> bool:
@@ -113,19 +107,16 @@ class IGroup(groups_interface.PopulationGroup):
     death_prob: float, required
         Probability trigger the death behaviour it should be value
         between 0.0 and 1.0.
-    prefix: str, optional
-        Prefix for auto labeling logic which is {prefix}_{id}.
-        Should not be changed. Default value: infected.
     """
 
     id = count(1)
 
     def __init__(self, x: float, y: float, infection_range: float,
-                 recover_prob: float, death_prob: float, prefix: str = 'infected') -> None:
+                 recover_prob: float, death_prob: float) -> None:
         self.recover_probability = recover_prob
         self.death_probability = death_prob
         self.infection_range = infection_range
-        super().__init__(x, y, prefix)
+        super().__init__(x, y)
 
     def recover(self) -> bool:
         """
@@ -175,15 +166,12 @@ class RGroup(groups_interface.PopulationGroup):
     y: float, required
         Instance starting position on Y axis on cartesian grid defined by
         container wrapper.
-    prefix: str, optional
-        Prefix for auto labeling logic which is {prefix}_{id}.
-        Should not be changed. Default value: recovered.
     """
 
     id = count(1)
 
-    def __init__(self, x: float, y: float, prefix: str = 'recovered') -> None:
-        super().__init__(x, y, prefix)
+    def __init__(self, x: float, y: float) -> None:
+        super().__init__(x, y)
 
 
 class DGroup(groups_interface.PopulationGroup):
@@ -199,12 +187,9 @@ class DGroup(groups_interface.PopulationGroup):
     y: float, required
         Instance starting position on Y axis on cartesian grid defined by
         container wrapper.
-    prefix: str, optional
-        Prefix for auto labeling logic which is {prefix}_{id}.
-        Should not be changed. Default value: dead.
     """
 
     id = count(1)
 
-    def __init__(self, x: float, y: float, prefix: str = 'dead') -> None:
-        super().__init__(x, y, prefix)
+    def __init__(self, x: float, y: float) -> None:
+        super().__init__(x, y)

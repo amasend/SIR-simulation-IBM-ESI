@@ -4,7 +4,6 @@ __all__ = [
 
 
 from abc import abstractmethod, ABCMeta
-from itertools import count
 import random
 
 
@@ -13,13 +12,11 @@ class PopulationGroup(metaclass=ABCMeta):
     Abstract class for specific population groups based on SIR model.
     """
 
-    id = count(0)
-
     @abstractmethod
-    def __init__(self, x: float, y: float, prefix: str = 'person') -> None:
+    def __init__(self, x: float, y: float) -> None:
         self.x = x
         self.y = y
-        self.label = '{prefix}_{x}'.format(prefix=prefix, x=next(self.id))
+        self.label = 'person'
 
     def move(self, x_distance: float, y_distance: float, box_width: int,
              box_height: int) -> bool:

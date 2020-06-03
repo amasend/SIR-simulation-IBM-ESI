@@ -40,11 +40,6 @@ class SGroupTestCase(unittest.TestCase):
         self.assertFalse(result, msg="Instance can move outside the "
                                      "container in Y axis.")
 
-    def test_08_check_if_auto_labeling_logic_correctly_assign_labels(self):
-        label = "susceptible_{x}".format(x=next(self.s_member.id) - 1)
-        self.assertEqual(self.s_member.label, label,
-                         msg="Auto labeling logic incorrect assign labels.")
-
 
 class IGroupTestCase(unittest.TestCase):
     def setUp(self) -> None:
