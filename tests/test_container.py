@@ -6,7 +6,9 @@ from simulation import groups
 class ContainerTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.box = container.Container(100, 1000, 300, 1, 0.5)
-        self.s_instance = groups.SGroup(x=1, y=1, infection_prob=0.25)
+        self.s_instance = groups.Person(x=0, y=0, infection_probability=0.25,
+                                        recover_probability=0.2, dead_probability=0.05,
+                                        infection_range=0.8)
 
     def test_01__check_if_dimensions_was_set_correctly(self):
         width = 100
@@ -19,7 +21,9 @@ class ContainerTestCase(unittest.TestCase):
                          msg="Container height was set incorrect.")
 
     def test_02__check_if_new_object_added_correctly_to_objects_list(self):
-        self.box.add_instances(self.s_instance, 1)
+        self.box.add_instances(1, "susceptible", infection_probability=0.4,
+                               recover_probability=0.2,
+                               dead_probability=0.05, infection_range=1.25)
         self.assertEqual(len(self.box.object_list), 1,
                          msg="New instance was not correctly added to"
                              "objects list.")
@@ -58,11 +62,9 @@ class ContainerTestCase(unittest.TestCase):
                                  "minute.")
 
     def test_10__check_if_group_could_be_grater_than_population(self):
-        self.box.smember = self.s_instance
-        self.box.imember = self.s_instance
-        self.box.rmember = self.s_instance
-        self.box.dmember = self.s_instance
-        self.assertRaises(ValueError, self.box.initial_set_up, 900, 100, 10, 0)
+        self.assertRaises(ValueError, self.box.initial_set_up, 900, 100, 10, 0,
+                          infection_probability=0.4, recover_probability=0.2,
+                          dead_probability=0.05, infection_range=1.25)
 
 
 if __name__ == '__main__':

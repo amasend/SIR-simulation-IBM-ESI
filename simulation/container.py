@@ -33,6 +33,7 @@ class Container(con_int.ContainerInterface):
 
     def __init__(self, size: int, population: int, time_to_live: int, action_interval: float,
                  move_dist_length: float) -> None:
+        self.condition = "susceptible"
         super().__init__(size, population, time_to_live, action_interval, move_dist_length)
 
     def count_susceptible(self) -> int:
@@ -48,7 +49,7 @@ class Container(con_int.ContainerInterface):
         >>> container.count_susceptible()
         """
 
-        return super().count_objects_in_list(groups.SGroup)
+        return super().count_objects_in_list("susceptible")
 
     def count_infected(self) -> int:
         """
@@ -63,7 +64,7 @@ class Container(con_int.ContainerInterface):
         >>> container.count_infected()
         """
 
-        return super().count_objects_in_list(groups.IGroup)
+        return super().count_objects_in_list("infected")
 
     def count_recovered(self) -> int:
         """
@@ -78,7 +79,7 @@ class Container(con_int.ContainerInterface):
         >>> container.count_recovered()
         """
 
-        return super().count_objects_in_list(groups.RGroup)
+        return super().count_objects_in_list("recovered")
 
     def count_dead(self) -> int:
         """
@@ -93,23 +94,24 @@ class Container(con_int.ContainerInterface):
         >>> container.count_dead()
         """
 
-        return super().count_objects_in_list(groups.DGroup)
+        return super().count_objects_in_list("dead")
 
-    def initial_set_up(self, number_of_susceptible: int, number_of_infected: int,
-                       number_of_recovered: int, number_of_dead: int, ) -> None:
+    def initial_set_up(self, susceptible: int, infected: int, recovered: int,
+                       dead: int, infection_probability: float, recover_probability: float,
+                       dead_probability: float, infection_range: float) -> None:
         """
         Method which specified amount of specific population group in object_list.
         When sum of groups is greater than population parameter raise ValueError.
 
         Parameters
         ----------
-        number_of_susceptible: int, required
+        susceptible: int, required
             Amount of susceptible instances to place in container.
-        number_of_infected: int, required
+        infected: int, required
             Amount of infected instances to place in container.
-        number_of_recovered: int, required
+        recovered: int, required
             Amount of infected instances to place in container.
-        number_of_dead: int, required
+        dead: int, required
             Amount of dead instances to place in container.
 
         Example
@@ -117,14 +119,17 @@ class Container(con_int.ContainerInterface):
         >>> container.initial_set_up(90, 10, 0, 0)
         """
 
-        if number_of_susceptible + number_of_infected + number_of_recovered + number_of_dead \
-                > self.population:
+        if susceptible + infected + recovered + dead > self.population:
             raise ValueError("Sum of population groups is greater than population")
 
-        self.add_instances(self.smember, number_of_susceptible)
-        self.add_instances(self.imember, number_of_infected)
-        self.add_instances(self.rmember, number_of_recovered)
-        self.add_instances(self.dmember, number_of_dead)
+        self.add_instances(susceptible, "susceptible", infection_probability,
+                           recover_probability, dead_probability, infection_range)
+        self.add_instances(infected, "infected", infection_probability,
+                           recover_probability, dead_probability, infection_range)
+        self.add_instances(recovered, "recovered", infection_probability,
+                           recover_probability, dead_probability, infection_range)
+        self.add_instances(dead, "dead", infection_probability,
+                           recover_probability, dead_probability, infection_range)
 
     def simulation(self) -> None:
         """
@@ -142,48 +147,29 @@ class Container(con_int.ContainerInterface):
               and add new dead instance
         """
 
-        self.susceptible_list.sort(key=lambda parameter: parameter.x)
-        self.infected_list.sort(key=lambda parameter: parameter.x)
-
         while self.is_alive():
-            infected_amount = 0
-            recovered_amount = 0
-            dead_amount = 0
             for instance in self.object_list:
                 x = random.uniform(-self.move_distance_length, self.move_distance_length)
                 y = random.uniform(-self.move_distance_length, self.move_distance_length)
                 instance.move(x, y, self.width, self.height)
 
-            for susceptible in self.susceptible_list:
-                for infected in self.infected_list:
-                    if susceptible.is_in_infection_area(infected.x, infected.y,
-                                                        infected.infection_range):
-                        if susceptible.infect():
-                            infected_amount += 1
-                            break
+                if instance.current_condition == "susceptible":
+                    for infected in self.object_list:
+                        if infected.current_condition == "infected":
+                            if instance.is_in_infection_area(infected.x, infected.y,
+                                                             infected.infection_range):
+                                if instance.infect():
+                                    instance.current_condition = "infected"
 
-            for infected in self.infected_list:
-                if infected.recover():
-                    recovered_amount += 1
+                if instance.current_condition == "infected":
+                    if instance.recover():
+                        instance.current_condition = "recovered"
 
-                if infected.death():
-                    # TODO
-                    # Dead instance can move
-                    dead_amount += 1
+                    if instance.death():
+                        # TODO
+                        # Dead instance can move
+                        instance.current_condition = "dead"
 
-            for number in range(infected_amount):
-                if self.susceptible_list:
-                    item = self.susceptible_list.pop()
-                    self.object_list.remove(item)
-
-            for number in range(recovered_amount + dead_amount):
-                if self.infected_list:
-                    item = self.infected_list.pop()
-                    self.object_list.remove(item)
-
-            self.add_instances(self.imember, infected_amount)
-            self.add_instances(self.rmember, recovered_amount)
-            self.add_instances(self.dmember, dead_amount)
             print("Time to live: {ttl}\n"
                   "Current susceptible amount: {sus}\n"
                   "Current infected amount: {inf}\n"

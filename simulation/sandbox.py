@@ -30,9 +30,9 @@ dead_prob = float(ui.UserInterface.ask_parameter("Dead probability (float): "))
 
 box = container.Container(size, population, simulation_time, interval, move_length)
 
-box.set_individuals_parameters(infection_prob=infection, infection_range=infection_distance,
-                               recover_prob=recover, dead_prob=dead_prob)
-box.initial_set_up(susceptible, infected, recovered, dead)
+box.initial_set_up(susceptible, infected, recovered, dead, infection_probability=infection,
+                   recover_probability=recover, dead_probability=dead_prob,
+                   infection_range=infection_distance,)
 box.simulation()
 
 ui.UserInterface.draw_category_name("Statistics after simulation")

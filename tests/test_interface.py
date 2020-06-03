@@ -2,12 +2,14 @@ import unittest
 from simulation import groups
 
 
-class SGroupTestCase(unittest.TestCase):
+class PersonTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.s_member = groups.SGroup(x=0, y=0, infection_prob=0.25)
+        self.s_member = groups.Person(x=0, y=0, infection_probability=0.25,
+                                      recover_probability=0.2, dead_probability=0.05,
+                                      infection_range=0.8)
 
     def test_01__check_if_constructor_work_correctly__return_SGroup_instance(self):
-        self.assertIsInstance(self.s_member, groups.SGroup,
+        self.assertIsInstance(self.s_member, groups.Person,
                               msg="Constructor was not return a SGroup instance.")
 
     def test_02__check_if_method_returns_new_instance__return_bool(self):
@@ -40,34 +42,24 @@ class SGroupTestCase(unittest.TestCase):
         self.assertFalse(result, msg="Instance can move outside the "
                                      "container in Y axis.")
 
-
-class IGroupTestCase(unittest.TestCase):
-    def setUp(self) -> None:
-        self.i_member = groups.IGroup(x=1, y=1, infection_range=1.2, recover_prob=0.15,
-                                      death_prob=0.02)
-
-    def test_01__check_if_constructor_work_correctly__return_IGroup_instance(self):
-        self.assertIsInstance(self.i_member, groups.IGroup,
-                              msg="Constructor was not return a IGroup instance.")
-
-    def test_02__check_if_instance_was_recovered__return_bool(self):
-        self.assertIsInstance(self.i_member.recover(), bool,
-                              msg="Method recover() was not return bool.")
-
-    def test_03__check_if_instance_died__return_bool(self):
-        self.assertIsInstance(self.i_member.death(), bool,
-                              msg="Method recover() was not return bool.")
+    def test_08_check_if_auto_labeling_logic_correctly_assign_labels(self):
+        label = "person_{x}".format(x=next(self.s_member.id) - 1)
+        self.assertEqual(self.s_member.label, label,
+                         msg="Auto labeling logic incorrect assign labels.")
 
 
 class SGroupAndIGroupInteractionTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.s_member = groups.SGroup(x=0, y=0, infection_prob=0.25)
-        cls.i_member = groups.IGroup(x=0, y=0, infection_range=1.2,
-                                     recover_prob=0.15, death_prob=0.02)
+        cls.s_member = groups.Person(x=0, y=0, infection_probability=0.25,
+                                     recover_probability=0.2, dead_probability=0.05,
+                                     infection_range=1.2)
+        cls.i_member = groups.Person(x=0, y=0, infection_probability=0.25,
+                                     recover_probability=0.2, dead_probability=0.05,
+                                     infection_range=1.2)
+        cls.i_member.current_condition = "infected"
 
     def setUp(self) -> None:
-
         self.container_width = 10
         self.container_height = 10
 
