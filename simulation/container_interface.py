@@ -22,19 +22,18 @@ class ContainerInterface(metaclass=ABCMeta):
         self.action_interval = action_interval
         self.move_distance_length = move_dist_length
         self.object_list = []
-        self.imember = ''
-        self.smember = ''
-        self.rmember = ''
-        self.dmember = ''
+        self.susceptible_list = []
+        self.infected_list = []
+        self.person = None
 
-    def count_objects_in_list(self, class_definition: 'classtype') -> int:
+    def count_objects_in_list(self, condition_label: str) -> int:
         """
         Method counts amount on given class type in object_list attribute.
         """
 
         amount = 0
         for instance in self.object_list:
-            if isinstance(instance, class_definition):
+            if instance.current_condition == condition_label:
                 amount += 1
         return amount
 
@@ -49,19 +48,17 @@ class ContainerInterface(metaclass=ABCMeta):
         else:
             return False
 
-    def set_population_groups(self, infection_prob: float, infection_range: float,
-                              recover_prob: float, dead_prob: float):
-        self.smember = groups.SGroup(x=0, y=0, infection_prob=infection_prob)
-        self.imember = groups.IGroup(x=0, y=0, infection_range=infection_range,
-                                     recover_prob=recover_prob, death_prob=dead_prob)
-        self.rmember = groups.RGroup(x=0, y=0)
-        self.dmember = groups.DGroup(x=0, y=0)
+    def add_instances(self, instance_amount: int, condition_to_set: str,
+                      infection_probability: float, recover_probability: float,
+                      dead_probability: float, infection_range: float) -> None:
+        for i in range(instance_amount):
+            x = random.uniform(0, self.width - 1)
+            y = random.uniform(0, self.height - 1)
+            self.person = groups.Person(x=0, y=0, infection_probability=infection_probability,
+                                        recover_probability=recover_probability,
+                                        dead_probability=dead_probability, infection_range=infection_range)
+            self.person.x = x
+            self.person.y = y
+            self.person.current_condition = condition_to_set
 
-    def place_instance(self, defined_instance: object) -> None:
-        defined_instance.x = random.uniform(0, self.width - 1)
-        defined_instance.y = random.uniform(0, self.height - 1)
-        self.object_list.append(defined_instance)
-
-    def add_instances(self, defined_instance: object, instance_amount: int) -> None:
-        for x in range(instance_amount):
-            self.place_instance(defined_instance)
+            self.object_list.append(self.person)

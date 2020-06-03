@@ -16,9 +16,16 @@ class PopulationGroup(metaclass=ABCMeta):
     id = count(0)
 
     @abstractmethod
-    def __init__(self, x: float, y: float, prefix: str = 'person') -> None:
+    def __init__(self, x: float, y: float, infection_probability: float,
+                 recover_probability: float, dead_probability: float,
+                 infection_range: float, prefix: str = 'person') -> None:
         self.x = x
         self.y = y
+        self.infection_probability = infection_probability
+        self.recover_probability = recover_probability
+        self.dead_probability = dead_probability
+        self.infection_range = infection_range
+        self.current_condition = None
         self.label = '{prefix}_{x}'.format(prefix=prefix, x=next(self.id))
 
     def move(self, x_distance: float, y_distance: float, box_width: int,

@@ -1,4 +1,4 @@
-# Only for testing purpose
+#Only for testing purpose
 from simulation import container
 from simulation import user_interface as ui
 
@@ -17,7 +17,7 @@ ui.UserInterface.draw_category_name("Container Configuration")
 
 size = int(ui.UserInterface.ask_parameter("Container width and height: "))
 simulation_time = int(ui.UserInterface.ask_parameter("How long simulation should take (in seconds): "))
-interval = int(ui.UserInterface.ask_parameter("How long is simulation interval (in seconds): "))
+interval = float(ui.UserInterface.ask_parameter("How long is simulation interval (in seconds): "))
 move_length = float(ui.UserInterface.ask_parameter("How far population instances can move: "))
 
 ui.UserInterface.draw_category_name("Simulation Probabilities")
@@ -30,9 +30,9 @@ dead_prob = float(ui.UserInterface.ask_parameter("Dead probability (float): "))
 
 box = container.Container(size, population, simulation_time, interval, move_length)
 
-box.set_population_groups(infection_prob=infection, infection_range=infection_distance,
-                          recover_prob=recover, dead_prob=dead_prob)
-box.initial_set_up(susceptible, infected, recovered, dead)
+box.initial_set_up(susceptible, infected, recovered, dead, infection_probability=infection,
+                   recover_probability=recover, dead_probability=dead_prob,
+                   infection_range=infection_distance,)
 box.simulation()
 
 ui.UserInterface.draw_category_name("Statistics after simulation")

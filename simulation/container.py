@@ -33,6 +33,7 @@ class Container(con_int.ContainerInterface):
 
     def __init__(self, size: int, population: int, time_to_live: int, action_interval: float,
                  move_dist_length: float) -> None:
+        self.condition = "susceptible"
         super().__init__(size, population, time_to_live, action_interval, move_dist_length)
 
     def count_susceptible(self) -> int:
@@ -48,7 +49,7 @@ class Container(con_int.ContainerInterface):
         >>> container.count_susceptible()
         """
 
-        return super().count_objects_in_list(groups.SGroup)
+        return super().count_objects_in_list("susceptible")
 
     def count_infected(self) -> int:
         """
@@ -63,7 +64,7 @@ class Container(con_int.ContainerInterface):
         >>> container.count_infected()
         """
 
-        return super().count_objects_in_list(groups.IGroup)
+        return super().count_objects_in_list("infected")
 
     def count_recovered(self) -> int:
         """
@@ -78,7 +79,7 @@ class Container(con_int.ContainerInterface):
         >>> container.count_recovered()
         """
 
-        return super().count_objects_in_list(groups.RGroup)
+        return super().count_objects_in_list("recovered")
 
     def count_dead(self) -> int:
         """
@@ -93,10 +94,11 @@ class Container(con_int.ContainerInterface):
         >>> container.count_dead()
         """
 
-        return super().count_objects_in_list(groups.DGroup)
+        return super().count_objects_in_list("dead")
 
     def initial_set_up(self, susceptible: int, infected: int, recovered: int,
-                       dead: int, ) -> None:
+                       dead: int, infection_probability: float, recover_probability: float,
+                       dead_probability: float, infection_range: float) -> None:
         """
         Method which specified amount of specific population group in object_list.
         When sum of groups is greater than population parameter raise ValueError.
@@ -120,10 +122,14 @@ class Container(con_int.ContainerInterface):
         if susceptible + infected + recovered + dead > self.population:
             raise ValueError("Sum of population groups is greater than population")
 
-        self.add_instances(self.smember, susceptible)
-        self.add_instances(self.imember, infected)
-        self.add_instances(self.rmember, recovered)
-        self.add_instances(self.dmember, dead)
+        self.add_instances(susceptible, "susceptible", infection_probability,
+                           recover_probability, dead_probability, infection_range)
+        self.add_instances(infected, "infected", infection_probability,
+                           recover_probability, dead_probability, infection_range)
+        self.add_instances(recovered, "recovered", infection_probability,
+                           recover_probability, dead_probability, infection_range)
+        self.add_instances(dead, "dead", infection_probability,
+                           recover_probability, dead_probability, infection_range)
 
     def simulation(self) -> None:
         """
@@ -147,25 +153,22 @@ class Container(con_int.ContainerInterface):
                 y = random.uniform(-self.move_distance_length, self.move_distance_length)
                 instance.move(x, y, self.width, self.height)
 
-                if isinstance(instance, groups.SGroup):
+                if instance.current_condition == "susceptible":
                     for infected in self.object_list:
-                        if isinstance(infected, groups.IGroup):
+                        if infected.current_condition == "infected":
                             if instance.is_in_infection_area(infected.x, infected.y,
                                                              infected.infection_range):
                                 if instance.infect():
-                                    self.object_list.remove(instance)
-                                    self.add_instances(self.imember, 1)
+                                    instance.current_condition = "infected"
 
-                if isinstance(instance, groups.IGroup):
+                if instance.current_condition == "infected":
                     if instance.recover():
-                        self.object_list.remove(instance)
-                        self.add_instances(self.rmember, 1)
+                        instance.current_condition = "recovered"
 
                     if instance.death():
                         # TODO
                         # Dead instance can move
-                        self.object_list.remove(instance)
-                        self.add_instances(self.dmember, 1)
+                        instance.current_condition = "dead"
 
             print("Time to live: {ttl}\n"
                   "Current susceptible amount: {sus}\n"
