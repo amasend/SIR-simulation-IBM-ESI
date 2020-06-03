@@ -2,7 +2,7 @@ __all__ = [
     'ContainerInterface'
 ]
 
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from simulation import groups
 import random
 
