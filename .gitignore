@@ -130,6 +130,3 @@ dmypy.json
 
 # PyCharm files
 .idea
-
-# Sandbox file
-simulation/sandbox.py

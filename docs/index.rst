@@ -11,6 +11,7 @@ Welcome to SIR simulation IBM ESI's documentation!
    :caption: Contents:
 
    population/index
+   population/container
 
 Indices and tables
 ==================
