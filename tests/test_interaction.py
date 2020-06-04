@@ -1,5 +1,7 @@
 import unittest
 from simulation import person
+from simulation import container
+import plotly.graph_objects as go
 
 
 class InfectedAndSusceptibleInteractionTestCase(unittest.TestCase):

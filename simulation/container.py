@@ -172,27 +172,28 @@ class Container(con_int.ContainerInterface):
 
             for counter, instance in enumerate(self.object_list, 1):
                 if instance.current_condition == "susceptible":
-                    for next_instance in itertools.islice(self.object_list, counter, len(self.object_list)):
+                    for next_instance in itertools.islice(self.object_list, counter, None):
                         if next_instance.current_condition == "infected":
+                            if instance.x + instance.infection_range <= next_instance.x:
+                                break
+
                             if instance.is_in_infection_area(next_instance.x, next_instance.y,
                                                              next_instance.infection_range):
                                 if instance.infect():
-                                    instance.can_infect = False
                                     instance.current_condition = "infected"
                                     break
-                            else:
-                                break
 
                 elif instance.current_condition == "infected" and instance.can_infect:
-                    for next_instance in itertools.islice(self.object_list, counter, len(self.object_list)):
+                    for next_instance in itertools.islice(self.object_list, counter, None):
                         if next_instance.current_condition == "susceptible":
+                            if instance.x + instance.infection_range <= next_instance.x:
+                                break
+
                             if next_instance.is_in_infection_area(instance.x, instance.y,
                                                                   instance.infection_range):
                                 if next_instance.infect():
                                     next_instance.can_infect = False
-                                    instance.current_condition = "infected"
-                            else:
-                                break
+                                    next_instance.current_condition = "infected"
 
                     if instance.recover():
                         instance.current_condition = "recovered"
