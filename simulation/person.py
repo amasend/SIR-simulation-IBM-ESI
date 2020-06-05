@@ -2,12 +2,11 @@ __all__ = [
     'Person'
 ]
 
-from simulation import groups_interface
-from itertools import count
+from simulation import person_interface
 import math
 
 
-class Person(groups_interface.PopulationGroup):
+class Person(person_interface.PopulationGroup):
     """
     Class that represents susceptible people that can be infected. Has own
     behaviour method infect() which define if person get infected or not.
@@ -31,18 +30,13 @@ class Person(groups_interface.PopulationGroup):
     infection_range: float, required
         Area around IGroup instance in which SGroup instance could be infected.
         It is a radius value.
-    prefix: str, optional
-        Prefix for auto labeling logic which is {prefix}_{id}.
-        Should not be changed. Default value: susceptible
     """
-
-    id = count(1)
 
     def __init__(self, x: float, y: float, infection_probability: float,
                  recover_probability: float, dead_probability: float,
-                 infection_range: float, prefix: str = 'person') -> None:
+                 infection_range: float) -> None:
         super().__init__(x, y, infection_probability, recover_probability, dead_probability,
-                         infection_range, prefix)
+                         infection_range)
 
     def is_in_infection_area(self, member_x: float, member_y: float,
                              member_inf_range: float) -> bool:

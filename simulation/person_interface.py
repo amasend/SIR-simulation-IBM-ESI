@@ -4,7 +4,6 @@ __all__ = [
 
 
 from abc import abstractmethod, ABCMeta
-from itertools import count
 import random
 
 
@@ -13,12 +12,10 @@ class PopulationGroup(metaclass=ABCMeta):
     Abstract class for specific population groups based on SIR model.
     """
 
-    id = count(0)
-
     @abstractmethod
     def __init__(self, x: float, y: float, infection_probability: float,
                  recover_probability: float, dead_probability: float,
-                 infection_range: float, prefix: str = 'person') -> None:
+                 infection_range: float) -> None:
         self.x = x
         self.y = y
         self.infection_probability = infection_probability
@@ -26,7 +23,7 @@ class PopulationGroup(metaclass=ABCMeta):
         self.dead_probability = dead_probability
         self.infection_range = infection_range
         self.current_condition = None
-        self.label = '{prefix}_{x}'.format(prefix=prefix, x=next(self.id))
+        self.can_infect = True
 
     def move(self, x_distance: float, y_distance: float, box_width: int,
              box_height: int) -> bool:
@@ -52,6 +49,7 @@ class PopulationGroup(metaclass=ABCMeta):
         """
         Specify if concrete behaviour can occur base on probability change.
         """
+
         chance = random.choices([True, False], [behaviour_prob, 1 - behaviour_prob])
 
         return chance[0]

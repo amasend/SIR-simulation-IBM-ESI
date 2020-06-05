@@ -1,7 +1,7 @@
 SIR mode population representation
 ==================================
-.. automodule:: simulation.groups_interface
+.. automodule:: simulation.person_interface
    :members:
 
-.. automodule:: simulation.groups
+.. automodule:: simulation.person
    :members:

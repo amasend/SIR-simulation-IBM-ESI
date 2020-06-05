@@ -2,8 +2,8 @@ __all__ = [
     'ContainerInterface'
 ]
 
-from abc import ABCMeta, abstractmethod
-from simulation import groups
+from abc import ABCMeta
+from simulation import person
 import random
 
 
@@ -22,8 +22,6 @@ class ContainerInterface(metaclass=ABCMeta):
         self.action_interval = action_interval
         self.move_distance_length = move_dist_length
         self.object_list = []
-        self.susceptible_list = []
-        self.infected_list = []
         self.person = None
 
     def count_objects_in_list(self, condition_label: str) -> int:
@@ -54,11 +52,10 @@ class ContainerInterface(metaclass=ABCMeta):
         for i in range(instance_amount):
             x = random.uniform(0, self.width - 1)
             y = random.uniform(0, self.height - 1)
-            self.person = groups.Person(x=0, y=0, infection_probability=infection_probability,
+            self.person = person.Person(x=x, y=y, infection_probability=infection_probability,
                                         recover_probability=recover_probability,
                                         dead_probability=dead_probability, infection_range=infection_range)
-            self.person.x = x
-            self.person.y = y
+
             self.person.current_condition = condition_to_set
 
             self.object_list.append(self.person)
