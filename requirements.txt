@@ -1,1 +1,4 @@
-
+# Core modules #
+plotly
+dash
+pandas

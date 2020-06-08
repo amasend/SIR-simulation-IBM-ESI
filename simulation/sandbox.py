@@ -4,7 +4,6 @@ from simulation import user_interface as ui
 
 
 ui.UserInterface.draw_title("SIR Simulation")
-
 ui.UserInterface.draw_category_name("Population Configuration")
 
 population = int(ui.UserInterface.ask_parameter("Insert population value: "))
@@ -35,9 +34,11 @@ box.initial_set_up(number_of_susceptible=susceptible, number_of_infected=infecte
                    number_of_recovered=recovered, number_of_dead=dead,
                    infection_probability=infection, recover_probability=recover,
                    dead_probability=dead_prob, infection_range=infection_distance)
-box.simulation()
+while box.is_alive():
+    box.simulation()
 
 ui.UserInterface.draw_category_name("Statistics after simulation")
+
 print("SUSCEPTIBLE after: {x}".format(x=box.count_susceptible()))
 print("INFECTED after: {x}".format(x=box.count_infected()))
 print("RECOVERED after: {x}".format(x=box.count_recovered()))

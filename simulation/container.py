@@ -157,60 +157,61 @@ class Container(con_int.ContainerInterface):
               and add new dead instance
         """
 
-        print(len(self.object_list))
-        while self.is_alive():
-            start = time.time()
-            # Note: Move and can_infect parameter reset. Then sort.
-            for instance in self.object_list:
+        # while self.is_alive():
+        start = time.time()
+        # Note: Move and can_infect parameter reset. Then sort.
+        for instance in self.object_list:
+            if not instance.current_condition == 'dead':
                 x = random.uniform(-self.move_distance_length, self.move_distance_length)
                 y = random.uniform(-self.move_distance_length, self.move_distance_length)
                 instance.move(x, y, self.width, self.height)
                 instance.can_infect = True
 
-            self.object_list.sort(key=lambda parameter: parameter.x)
-            # --- end.
+        self.object_list.sort(key=lambda parameter: parameter.x)
+        # --- end.
 
-            for counter, instance in enumerate(self.object_list, 1):
-                if instance.current_condition == "susceptible":
-                    for next_instance in itertools.islice(self.object_list, counter, None):
-                        if next_instance.current_condition == "infected":
-                            if instance.x + instance.infection_range <= next_instance.x:
+        for counter, instance in enumerate(self.object_list, 1):
+            if instance.current_condition == "susceptible":
+                for next_instance in itertools.islice(self.object_list, counter, None):
+                    if next_instance.current_condition == "infected":
+                        if next_instance.x - instance.x >= instance.infection_range:
+                            break
+
+                        if instance.is_in_infection_area(next_instance.x, next_instance.y,
+                                                         next_instance.infection_range):
+                            if instance.infect():
+                                instance.current_condition = "infected"
                                 break
 
-                            if instance.is_in_infection_area(next_instance.x, next_instance.y,
-                                                             next_instance.infection_range):
-                                if instance.infect():
-                                    instance.current_condition = "infected"
-                                    break
+            elif instance.current_condition == "infected" and instance.can_infect:
+                for next_instance in itertools.islice(self.object_list, counter, None):
+                    if next_instance.current_condition == "susceptible":
+                        if next_instance.x - instance.x >= instance.infection_range:
+                            break
 
-                elif instance.current_condition == "infected" and instance.can_infect:
-                    for next_instance in itertools.islice(self.object_list, counter, None):
-                        if next_instance.current_condition == "susceptible":
-                            if instance.x + instance.infection_range <= next_instance.x:
-                                break
+                        if next_instance.is_in_infection_area(instance.x, instance.y,
+                                                              instance.infection_range):
+                            if next_instance.infect():
+                                next_instance.can_infect = False
+                                next_instance.current_condition = "infected"
 
-                            if next_instance.is_in_infection_area(instance.x, instance.y,
-                                                                  instance.infection_range):
-                                if next_instance.infect():
-                                    next_instance.can_infect = False
-                                    next_instance.current_condition = "infected"
+                if instance.recover():
+                    instance.current_condition = "recovered"
 
-                    if instance.recover():
-                        instance.current_condition = "recovered"
+                if instance.death():
+                    instance.current_condition = "dead"
 
-                    if instance.death():
-                        instance.current_condition = "dead"
+        print(time.time() - start)
 
-            print(time.time() - start)
-            print("Time to live: {ttl}\n"
-                  "Current susceptible amount: {sus}\n"
-                  "Current infected amount: {inf}\n"
-                  "Current recovered amount: {rec}\n"
-                  "current dead amount: {dead}\n".format(ttl=self.time_to_live,
-                                                         sus=self.count_susceptible(),
-                                                         inf=self.count_infected(),
-                                                         rec=self.count_recovered(),
-                                                         dead=self.count_dead()))
+        print("Time to live: {ttl}\n"
+              "Current susceptible amount: {sus}\n"
+              "Current infected amount: {inf}\n"
+              "Current recovered amount: {rec}\n"
+              "current dead amount: {dead}\n".format(ttl=self.time_to_live,
+                                                     sus=self.count_susceptible(),
+                                                     inf=self.count_infected(),
+                                                     rec=self.count_recovered(),
+                                                     dead=self.count_dead()))
 
-            time.sleep(self.action_interval)
-            self.time_to_live -= self.action_interval
+        # time.sleep(self.action_interval)
+        # self.time_to_live -= self.action_interval
