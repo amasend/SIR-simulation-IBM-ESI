@@ -1,6 +1,7 @@
 # Only for testing purpose
 from simulation import container
 from simulation import user_interface as ui
+import time
 
 
 ui.UserInterface.draw_title("SIR Simulation")
@@ -36,6 +37,19 @@ box.initial_set_up(number_of_susceptible=susceptible, number_of_infected=infecte
                    dead_probability=dead_prob, infection_range=infection_distance)
 while box.is_alive():
     box.simulation()
+
+    print("Time to live: {ttl}\n"
+          "Current susceptible amount: {sus}\n"
+          "Current infected amount: {inf}\n"
+          "Current recovered amount: {rec}\n"
+          "current dead amount: {dead}\n".format(ttl=box.time_to_live,
+                                                 sus=box.count_susceptible(),
+                                                 inf=box.count_infected(),
+                                                 rec=box.count_recovered(),
+                                                 dead=box.count_dead()))
+
+    time.sleep(box.action_interval)
+    box.time_to_live -= box.action_interval
 
 ui.UserInterface.draw_category_name("Statistics after simulation")
 

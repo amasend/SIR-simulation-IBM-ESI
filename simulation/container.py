@@ -157,8 +157,6 @@ class Container(con_int.ContainerInterface):
               and add new dead instance
         """
 
-        # while self.is_alive():
-        start = time.time()
         # Note: Move and can_infect parameter reset. Then sort.
         for instance in self.object_list:
             if not instance.current_condition == 'dead':
@@ -200,18 +198,3 @@ class Container(con_int.ContainerInterface):
 
                 if instance.death():
                     instance.current_condition = "dead"
-
-        print(time.time() - start)
-
-        print("Time to live: {ttl}\n"
-              "Current susceptible amount: {sus}\n"
-              "Current infected amount: {inf}\n"
-              "Current recovered amount: {rec}\n"
-              "current dead amount: {dead}\n".format(ttl=self.time_to_live,
-                                                     sus=self.count_susceptible(),
-                                                     inf=self.count_infected(),
-                                                     rec=self.count_recovered(),
-                                                     dead=self.count_dead()))
-
-        # time.sleep(self.action_interval)
-        # self.time_to_live -= self.action_interval
