@@ -9,9 +9,12 @@ from dash.dependencies import Input, Output, State
 
 d = {'time': [], 'value': [], 'condition': []}
 
-old_amounts = {'susceptible': 0, 'dead': 0, 'recovered': 0}
+old_amounts = {'susceptible': 0, 'dead': 0, 'recovered': 0, 'a_parameter': 0.0}
 
-box = container.Container(size=20, population=0, time_to_live=0,
+r0_parameters = [0.0]
+q_parameters = [0.0]
+
+box = container.Container(size=0, population=0, time_to_live=0,
                           action_interval=0, move_dist_length=0)
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -36,8 +39,15 @@ app.layout = html.Div([
                                 dcc.Input(id='population-amount',
                                           type='number',
                                           placeholder='population amount',
-                                          value=100, style={'width': '468px'})
-                            ], colSpan=2)
+                                          value=100)
+                            ]),
+                            html.Td([
+                                html.Label('Container size', htmlFor='container-size'),
+                                dcc.Input(id='container-size',
+                                          type='number',
+                                          placeholder='population amount',
+                                          value=50)
+                            ])
                         ]),
                         html.Tr([
                             html.Td([
@@ -171,8 +181,8 @@ app.layout = html.Div([
         ], style={'display': 'flex', 'justify-content': 'space-evenly'}),
         html.Div([dcc.Graph(id='live-population', style={'flex-grow': '0', 'width': '80%'}),
                   html.Table([
-                    html.Thead(id='current-population-amount'),
-                    html.Thead(id='additional-parameters'),
+                      html.Thead(id='current-population-amount'),
+                      html.Thead(id="additional-parameters")
                   ])
                   ], style={'marginTop': '20px', 'display': 'flex', 'justify-content': 'space-around'}),
         html.Div([
@@ -255,6 +265,7 @@ def simulation_begin(n_intervals: int) -> dict:
                Input('stop-button', 'n_clicks'),
                Input('reset-button', 'n_clicks')],
               [State('population-amount', 'value'),
+               State('container-size', 'value'),
                State('susceptible-amount', 'value'),
                State('infected-amount', 'value'),
                State('recovered-amount', 'value'),
@@ -266,10 +277,10 @@ def simulation_begin(n_intervals: int) -> dict:
                State('move-length', 'value'),
                ])
 def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_reset: int,
-                        population_amount: int, susceptible_amount: int, infected_amount: int,
-                        recovered_amount: int, dead_amount: int, infection_probability: float,
-                        recover_probability: float, dead_probability: float, infection_range: float,
-                        move_length: float) -> list:
+                        population_amount: int, container_size: int, susceptible_amount: int,
+                        infected_amount: int, recovered_amount: int, dead_amount: int,
+                        infection_probability: float, recover_probability: float,
+                        dead_probability: float, infection_range: float, move_length: float) -> list:
     """
     Function handling simulation events like start, stop, continue, reset.
 
@@ -285,6 +296,8 @@ def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_re
             Clicks amount of button for reset simulation event.
         population_amount: int, required
             This parameters store amount of max count of population based objects.
+        container_size: int, required
+            Dimension of container which contains all instances inside.
         susceptible_amount: int, required
             Amount of susceptible instances to place in container.
         infected_amount: int, required
@@ -321,6 +334,8 @@ def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_re
 
     if button_id == 'start-button':
         box.population = population_amount
+        box.width = container_size
+        box.height = container_size
         box.move_distance_length = move_length
         box.initial_set_up(number_of_susceptible=susceptible_amount,
                            number_of_infected=infected_amount,
@@ -342,14 +357,16 @@ def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_re
         return [False, d['time'][-1] + 1]
 
     if button_id == 'reset-button':
-        d['condition'] = []
-        d['time'] = []
-        d['value'] = []
+        d['condition'].clear()
+        d['time'].clear()
+        d['value'].clear()
 
         box.population = 0
         box.initial_set_up(0, 0, 0, 0, 0, 0, 0, 0)
-        box.object_list = []
+        box.object_list.clear()
 
+        r0_parameters.clear()
+        q_parameters.clear()
         return [True, 0]
 
     return [True, 0]
@@ -377,19 +394,17 @@ def update_graph_live(n_intervals: int, simulation_data: dict) -> 'plotly_expres
     each group in simulation.
     """
 
-    data = simulation_data
-
     d['time'].append(n_intervals)
-    d['value'].append(data['groups']['susceptible'])
+    d['value'].append(simulation_data['groups']['susceptible'])
     d['condition'].append('susceptible')
     d['time'].append(n_intervals)
-    d['value'].append(data['groups']['infected'])
+    d['value'].append(simulation_data['groups']['infected'])
     d['condition'].append('infected')
     d['time'].append(n_intervals)
-    d['value'].append(data['groups']['recovered'])
+    d['value'].append(simulation_data['groups']['recovered'])
     d['condition'].append('recovered')
     d['time'].append(n_intervals)
-    d['value'].append(data['groups']['dead'])
+    d['value'].append(simulation_data['groups']['dead'])
     d['condition'].append('dead')
 
     df = pd.DataFrame(data=d)
@@ -466,7 +481,12 @@ def update_graph_move(n_intervals: int, simulation_data: dict) -> 'plotly.expres
         'height': 800,
         'template': 'plotly_dark'
     })
-
+    fig.for_each_trace(
+        lambda trace: trace.update({'marker': {'symbol': 'circle-open-dot',
+                                               'size': 20,
+                                               'line': {'width': 2}}})
+        if trace.name == "infected" else (),
+    )
     return fig
 
 
@@ -622,14 +642,14 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
     Html table base od bash html.Table object with parameter q and R0.
     """
 
-    r_parameter = 0
-    r_0 = 0
-    q_parameter = 0
-
     if simulation_data['groups']['susceptible'] > 0 and simulation_data['groups']['infected'] > 0:
         r_parameter = compute_r_parameter(old_amounts['susceptible'],
                                           simulation_data['groups']['susceptible'],
                                           simulation_data['groups']['infected'])
+
+        old_amounts['susceptible'] = simulation_data['groups']['susceptible']
+    else:
+        r_parameter = 0
 
     if simulation_data['groups']['infected'] > 0 and simulation_data['groups']['dead'] > 0 or \
             simulation_data['groups']['recovered'] > 0:
@@ -638,28 +658,37 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
                                           simulation_data['groups']['dead'],
                                           simulation_data['groups']['infected'])
 
+        old_amounts['infected'] = simulation_data['groups']['infected']
+        old_amounts['recovered'] = simulation_data['groups']['recovered']
+        old_amounts['dead'] = simulation_data['groups']['dead']
+
         if a_parameter > 0:
-            q_parameter = compute_q_parameter(r_parameter, a_parameter)
-            r_0 += compute_r0_parameter(r_parameter, a_parameter, susceptible_amount)
+            old_amounts['a_parameter'] = a_parameter
 
-            q_parameter = round(q_parameter, 2)
-            r_0 = round(r_0, 2)
+            q_parameters.append(compute_q_parameter(r_parameter, a_parameter))
+            r0_parameters.append(compute_r0_parameter(r_parameter, a_parameter, susceptible_amount))
+        else:
+            q_parameters.append(compute_q_parameter(r_parameter, old_amounts['a_parameter']))
+            r0_parameters.append(compute_r0_parameter(r_parameter, old_amounts['a_parameter'], susceptible_amount))
 
-    # Note: Pandemic R0 parameter highlight
-    if r_0 > 1.5:
-        table = [html.Tr([html.Th('Parameter'), html.Th('Value')]),
-                 html.Tr([html.Td(['R', html.Sub('0')]), html.Td(r_0)], style={'backgroundColor': 'red'}),
-                 html.Tr([html.Td('q'), html.Td(q_parameter)])]
-    else:
-        table = [html.Tr([html.Th('Parameter'), html.Th('Value')]),
-                 html.Tr([html.Td(['R', html.Sub('0')]), html.Td(r_0)]),
-                 html.Tr([html.Td('q'), html.Td(q_parameter)])]
+        q_parameter = sum(q_parameters) / len(q_parameters)
+        q_parameter = round(q_parameter, 2)
+        r_0 = sum(r0_parameters) / len(r0_parameters)
+        r_0 = round(r_0, 2)
 
-    old_amounts['susceptible'] = simulation_data['groups']['susceptible']
-    old_amounts['dead'] = simulation_data['groups']['dead']
-    old_amounts['recovered'] = simulation_data['groups']['recovered']
+        # Note: Pandemic R0 parameter highlight
+        if r_0 > 1.5:
+            return [html.Tr([html.Th('Parameter'), html.Th('Value')]),
+                    html.Tr([html.Td(['R', html.Sub('0')]), html.Td(r_0)], style={'backgroundColor': 'red'}),
+                    html.Tr([html.Td('q'), html.Td(q_parameter)])]
+        else:
+            return [html.Tr([html.Th('Parameter'), html.Th('Value')]),
+                    html.Tr([html.Td(['R', html.Sub('0')]), html.Td(r_0)]),
+                    html.Tr([html.Td('q'), html.Td(q_parameter)])]
 
-    return table
+    return [html.Tr([html.Th('Parameter'), html.Th('Value')]),
+            html.Tr([html.Td(['R', html.Sub('0')]), html.Td(0)]),
+            html.Tr([html.Td('q'), html.Td(0)])]
 
 
 if __name__ == '__main__':
