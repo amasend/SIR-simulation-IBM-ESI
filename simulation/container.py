@@ -5,7 +5,6 @@ __all__ = [
 
 from simulation import container_interface as con_int
 import random
-import time
 import itertools
 
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -6,7 +5,6 @@ import plotly.express as px
 import pandas as pd
 from simulation import container
 from dash.dependencies import Input, Output, State
-import json
 
 
 d = {'time': [], 'value': [], 'condition': []}
@@ -74,6 +72,12 @@ app.layout = html.Div([
                             ])
                         ]),
                     ], id='configuration-table'),
+                html.Div([
+                    html.Button('Start', id='start-button', n_clicks=0),
+                    html.Button('Stop', id='stop-button', n_clicks=0),
+                    html.Button('Continue', id='continue-button', n_clicks=0),
+                    html.Button('Reset', id='reset-button', n_clicks=0),
+                ], style={'display': 'flex', 'justify-content': 'center', 'paddingRight': '5px', 'marginTop': '10%'})
             ]),
             html.Div([
                     html.Table([
@@ -163,28 +167,14 @@ app.layout = html.Div([
                             ]),
                         ])
                     ], style={'width': '468px'}),
-                    html.Div([
-                        html.Button('Start', id='start-button', n_clicks=0),
-                        html.Button('Stop', id='stop-button', n_clicks=0),
-                        html.Button('Continue', id='continue-button', n_clicks=0),
-                        html.Button('Reset', id='reset-button', n_clicks=0),
-                    ], style={'display': 'flex', 'justify-content': 'center', 'padding': '5px'})
-
             ])
         ], style={'display': 'flex', 'justify-content': 'space-evenly'}),
-        html.Div([
-            html.Div([
-                html.Table(id='current-population-amount', style={
-                })
-            ]),
-            html.Div(
-                html.Table(id='additional-parameters')),
-        ], style={'display': 'flex', 'justify-content': 'space-evenly'}),
-
-
-
-        html.Div(
-            dcc.Graph(id='live-population'), style={'marginTop': '20px'}),
+        html.Div([dcc.Graph(id='live-population', style={'flex-grow': '0', 'width': '80%'}),
+                  html.Table([
+                    html.Thead(id='current-population-amount'),
+                    html.Thead(id='additional-parameters'),
+                  ])
+                  ], style={'marginTop': '20px', 'display': 'flex', 'justify-content': 'space-around'}),
         html.Div([
             dcc.Graph(id='move-population'),
             dcc.Graph(id='population-percent'),
@@ -195,37 +185,37 @@ app.layout = html.Div([
 
 @app.callback(Output('inf-prob-value', 'children'),
               [Input('infection-probability', 'value')])
-def update_slider(value):
+def display_infection_probability_slider_value(value):
     return value
 
 
 @app.callback(Output('rec-prob-value', 'children'),
               [Input('recover-probability', 'value')])
-def update_slider(value):
+def display_recover_probability_slider_value(value):
     return value
 
 
 @app.callback(Output('dead-prob-value', 'children'),
               [Input('dead-probability', 'value')])
-def update_slider(value):
+def display_dead_probability_slider_value(value):
     return value
 
 
 @app.callback(Output('inf-range-value', 'children'),
               [Input('infection-range', 'value')])
-def update_slider(value):
+def display_infection_range_slider_value(value):
     return value
 
 
 @app.callback(Output('move-dist-value', 'children'),
               [Input('move-length', 'value')])
-def update_slider(value):
+def display_move_length_slider_value(value):
     return value
 
 
 @app.callback(Output('simulation-data', 'data'),
               [Input('interval-component', 'n_intervals')])
-def simulation_begin(n_intervals: int) -> json:
+def simulation_begin(n_intervals: int) -> dict:
     """
     Function than handling generate simulation data end execute
     Container.simulation() method in every second of simulation.
@@ -240,7 +230,7 @@ def simulation_begin(n_intervals: int) -> json:
     -------
     Function return Container.object_list each instance x, y and condition
     parameters in key "individuals" and each population group amount in key
-    "groups" in JSON format.
+    "groups" in dictionary data structure.
     """
 
     data = {'individuals': [], 'groups': {'susceptible': 0, 'infected': 0,
@@ -255,10 +245,11 @@ def simulation_begin(n_intervals: int) -> json:
 
     box.simulation()
 
-    return json.dumps(data)
+    return data
 
 
-@app.callback(Output('interval-component', 'disabled'),
+@app.callback([Output('interval-component', 'disabled'),
+               Output('interval-component', 'n_intervals')],
               [Input('start-button', 'n_clicks'),
                Input('continue-button', 'n_clicks'),
                Input('stop-button', 'n_clicks'),
@@ -278,7 +269,7 @@ def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_re
                         population_amount: int, susceptible_amount: int, infected_amount: int,
                         recovered_amount: int, dead_amount: int, infection_probability: float,
                         recover_probability: float, dead_probability: float, infection_range: float,
-                        move_length: float) -> bool:
+                        move_length: float) -> list:
     """
     Function handling simulation events like start, stop, continue, reset.
 
@@ -315,9 +306,10 @@ def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_re
 
     Returns
     -------
-    Based on selected event return True or False for dcc.Interval object's attribute
-    'disabled'. If event is Stop, Reset returns True, if Start, Continue returns
-    False.
+    Based on selected event return list where fist index is True or False for
+    dcc.Interval object's attribute 'disabled'. If event is Stop, Reset
+    returns True, if Start, Continue returns False. Second index is value
+    for parmeter 'n_intervals' which stand for interval start value.
     """
 
     ctx = dash.callback_context
@@ -341,13 +333,13 @@ def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_re
         old_amounts['susceptible'] = susceptible_amount
         old_amounts['recovered'] = recovered_amount
         old_amounts['dead'] = dead_amount
-        return False
+        return [False, 0]
 
-    if button_id == 'stop-button' or box.count_infected() <= 0:
-        return True
+    if button_id == 'stop-button':
+        return [True, d['time'][-1]]
 
     if button_id == 'continue-button':
-        return False
+        return [False, d['time'][-1] + 1]
 
     if button_id == 'reset-button':
         d['condition'] = []
@@ -358,15 +350,15 @@ def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_re
         box.initial_set_up(0, 0, 0, 0, 0, 0, 0, 0)
         box.object_list = []
 
-        return True
+        return [True, 0]
 
-    return True
+    return [True, 0]
 
 
 @app.callback(Output('live-population', 'figure'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_graph_live(n_intervals: int, json_data: json) -> 'plotly_express.line':
+def update_graph_live(n_intervals: int, simulation_data: dict) -> 'plotly_express.line':
     """
     Function handling scatter graph for each individual instance move in
     grid.
@@ -376,8 +368,8 @@ def update_graph_live(n_intervals: int, json_data: json) -> 'plotly_express.line
     n_intervals: int, required
         Number of passed intervals from begin of simulation. Generated
         with dash object dcc.Interval.
-    json_data: json, required
-        JSON contain data of simulation.
+    simulation_data: dict, required
+        Dictionary contain data of simulation.
 
     Returns
     -------
@@ -385,7 +377,7 @@ def update_graph_live(n_intervals: int, json_data: json) -> 'plotly_express.line
     each group in simulation.
     """
 
-    data = json.loads(json_data)
+    data = simulation_data
 
     d['time'].append(n_intervals)
     d['value'].append(data['groups']['susceptible'])
@@ -427,7 +419,7 @@ def update_graph_live(n_intervals: int, json_data: json) -> 'plotly_express.line
 @app.callback(Output('move-population', 'figure'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_graph_move(n_intervals: int, json_data: json) -> 'plotly.express.scatter':
+def update_graph_move(n_intervals: int, simulation_data: dict) -> 'plotly.express.scatter':
     """
     Function handling scatter graph for each individual instance move in
     grid.
@@ -437,18 +429,17 @@ def update_graph_move(n_intervals: int, json_data: json) -> 'plotly.express.scat
     n_intervals: int, required
         Number of passed intervals from begin of simulation. Generated
         with dash object dcc.Interval.
-    json_data: json, required
-        JSON contain data of simulation.
+    simulation_data: dict, required
+        Dictionary contain data of simulation.
 
     Returns
     -------
     Return plolty express scatter chart with placed instances in grid.
     """
 
-    data = json.loads(json_data)
     cords = {'x': [], 'y': [], 'condition': []}
 
-    for element in data['individuals']:
+    for element in simulation_data['individuals']:
         cords['x'].append(element['x'])
         cords['y'].append(element['y'])
         cords['condition'].append(element['condition'])
@@ -482,7 +473,7 @@ def update_graph_move(n_intervals: int, json_data: json) -> 'plotly.express.scat
 @app.callback(Output('population-percent', 'figure'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_population_percent(n_intervals: int, json_data: json) -> 'plotly.express.pie':
+def update_population_percent(n_intervals: int, simulation_data: dict) -> 'plotly.express.pie':
     """
     Function handling pie chart with percent value of each group in population.
 
@@ -490,25 +481,18 @@ def update_population_percent(n_intervals: int, json_data: json) -> 'plotly.expr
     ----------
     n_intervals: int, required
         Number of past intervals.
-    json_data: json, required
-        JSON contain data of simulation.
+    simulation_data: dict, required
+        Dictionary contain data of simulation..
         
     Returns
     -------
     Plotly express object pie chart.
     """
 
-    data = json.loads(json_data)
-    percent = {'condition': [], 'percent_value': []}
-
-    percent['condition'].append('susceptible')
-    percent['percent_value'].append(data['groups']['susceptible'])
-    percent['condition'].append('infected')
-    percent['percent_value'].append(data['groups']['infected'])
-    percent['condition'].append('recovered')
-    percent['percent_value'].append(data['groups']['recovered'])
-    percent['condition'].append('dead')
-    percent['percent_value'].append(data['groups']['dead'])
+    data = simulation_data
+    percent = {'condition': ['susceptible', 'infected', 'recovered', 'dead'],
+               'percent_value': [data['groups']['susceptible'], data['groups']['infected'],
+                                 data['groups']['recovered'], data['groups']['dead']]}
 
     df = pd.DataFrame(data=percent)
 
@@ -524,13 +508,14 @@ def update_population_percent(n_intervals: int, json_data: json) -> 'plotly.expr
         'title': {'text': 'Percent of population in each group', 'font': {'size': 30}},
         'template': 'plotly_dark'
     })
+
     return fig
 
 
 @app.callback(Output('current-population-amount', 'children'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_population_amount(n_intervals: int, json_data) -> 'html table':
+def update_population_amount(n_intervals: int, simulation_data: dict) -> 'html table':
     """
     Function handling display html table with amount of each group.
 
@@ -538,27 +523,88 @@ def update_population_amount(n_intervals: int, json_data) -> 'html table':
     ----------
     n_intervals: int, required
         Number of past intervals.
-    json_data: json, required
-        JSON contain data of simulation.
+    simulation_data: dict, required
+        Dictionary contain data of simulation.
 
     Returns
     -------
     Html table base od bash html.Table object.
     """
 
-    data = json.loads(json_data)
-    return [html.Thead(html.Tr([html.Td('Condition'), html.Td('Amount')])),
-            html.Tr([html.Td('Susceptible'), html.Td(data['groups']['susceptible'])]),
-            html.Tr([html.Td('Infected'), html.Td(data['groups']['infected'])]),
-            html.Tr([html.Td('Recovered'), html.Td(data['groups']['recovered'])]),
-            html.Tr([html.Td('Dead'), html.Td(data['groups']['dead'])])]
+    return [html.Tr([html.Th('Condition'), html.Th('Amount')]),
+            html.Tr([html.Td('Susceptible'), html.Td(simulation_data['groups']['susceptible'])]),
+            html.Tr([html.Td('Infected'), html.Td(simulation_data['groups']['infected'])]),
+            html.Tr([html.Td('Recovered'), html.Td(simulation_data['groups']['recovered'])]),
+            html.Tr([html.Td('Dead'), html.Td(simulation_data['groups']['dead'])])]
+
+
+def compute_r_parameter(ago_susceptible: int, current_susceptible: int, current_infected: int) -> float:
+    """
+    Function for compute infection ratio parameter based od SIR model.
+
+    Parameters
+    ----------
+    ago_susceptible: int, required
+        Amount of susceptible people one interval before current iteration.
+    current_susceptible: int, required
+        Amount of susceptible people in current interval.
+    current_infected: int, required
+        Amount of infected people in current interval.
+
+    Returns
+    -------
+    Returns value of infection ratio.
+
+    Example
+    -------
+    >>> compute_r_parameter(10, 9, 1)
+    """
+
+    d_susceptible = current_susceptible - ago_susceptible
+
+    return -d_susceptible * (1 / (current_susceptible * current_infected))
+
+
+def compute_a_parameter(ago_removed: int, current_removed: int, current_infected: int) -> float:
+    """
+    Function for compute recover rate value based od SIR model.
+
+    Parameters
+    ----------
+    ago_removed: int, required
+        Amount of recovered and dead people one interval before current iteration.
+    current_removed: int, required
+        Amount of recovered and dead people in current interval.
+    current_infected: int, required
+        Amount of infected people in current interval.
+
+    Returns
+    -------
+    Returns value of recover rate parameter.
+
+    Example
+    -------
+    >>> compute_a_parameter(0, 2, 10)
+    """
+
+    d_removed = current_removed - ago_removed
+
+    return d_removed * (1 / (current_removed * current_infected))
+
+
+def compute_r0_parameter(r_parameter: float, a_parameter: float, start_susceptible_amount: int) -> float:
+    return r_parameter * start_susceptible_amount / a_parameter
+
+
+def compute_q_parameter(r_parameter: float, a_parameter: float) -> float:
+    return r_parameter / a_parameter
 
 
 @app.callback(Output('additional-parameters', 'children'),
               [Input('interval-component', 'n_intervals'),
               Input('simulation-data', 'data')],
               [State('susceptible-amount', 'value')])
-def parameter_update(n_intervals: int, json_data: json, susceptible_amount: int) -> 'html table':
+def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount: int) -> 'html table':
     """
     Function handling display html table with additional parameters q and R0.
 
@@ -566,8 +612,8 @@ def parameter_update(n_intervals: int, json_data: json, susceptible_amount: int)
     ----------
     n_intervals: int, required
         Number of past intervals.
-    json_data: json, required
-        JSON contain data of simulation.
+    simulation_data: dict, required
+        Dictionary contain data of simulation.
     susceptible_amount: int, required
         Start number of susceptible.
 
@@ -576,43 +622,42 @@ def parameter_update(n_intervals: int, json_data: json, susceptible_amount: int)
     Html table base od bash html.Table object with parameter q and R0.
     """
 
-    data = json.loads(json_data)
-    change_susceptible = data['groups']['susceptible'] - old_amounts['susceptible']
-    change_d = abs(old_amounts['dead'] - data['groups']['dead'])
-    change_r = abs(old_amounts['recovered'] - data['groups']['recovered'])
-    change_removed = change_d + change_r
     r_parameter = 0
-    a_parameter = 1
-    q_parameter = 0
     r_0 = 0
+    q_parameter = 0
 
-    if data['groups']['susceptible'] > 0 and data['groups']['infected'] > 0:
-        r_parameter = -change_susceptible / (data['groups']['susceptible'] * data['groups']['infected'])
+    if simulation_data['groups']['susceptible'] > 0 and simulation_data['groups']['infected'] > 0:
+        r_parameter = compute_r_parameter(old_amounts['susceptible'],
+                                          simulation_data['groups']['susceptible'],
+                                          simulation_data['groups']['infected'])
 
-    if data['groups']['infected'] > 0 and data['groups']['dead'] > 0 and data['groups']['recovered'] > 0:
-        a_parameter = change_removed * (1 / data['groups']['infected'] * (data['groups']['dead'] +
-                                                                          data['groups']['recovered']))
+    if simulation_data['groups']['infected'] > 0 and simulation_data['groups']['dead'] > 0 or \
+            simulation_data['groups']['recovered'] > 0:
+        a_parameter = compute_a_parameter(old_amounts['recovered'] + old_amounts['dead'],
+                                          simulation_data['groups']['recovered'] +
+                                          simulation_data['groups']['dead'],
+                                          simulation_data['groups']['infected'])
 
-    if a_parameter > 0:
-        q_parameter = r_parameter / a_parameter
-        r_0 = (r_parameter * susceptible_amount) / a_parameter
+        if a_parameter > 0:
+            q_parameter = compute_q_parameter(r_parameter, a_parameter)
+            r_0 += compute_r0_parameter(r_parameter, a_parameter, susceptible_amount)
 
-    q_parameter = round(q_parameter, 2)
-    r_0 = round(r_0, 2)
-
-    old_amounts['susceptible'] = data['groups']['susceptible']
-    old_amounts['dead'] = data['groups']['dead']
-    old_amounts['recovered'] = data['groups']['recovered']
+            q_parameter = round(q_parameter, 2)
+            r_0 = round(r_0, 2)
 
     # Note: Pandemic R0 parameter highlight
     if r_0 > 1.5:
-        table = [html.Thead(html.Tr([html.Td('Parameter'), html.Td('Value')])),
-                 html.Tr([html.Td('R'), html.Td(r_0)], style={'backgroundColor': 'red'}),
+        table = [html.Tr([html.Th('Parameter'), html.Th('Value')]),
+                 html.Tr([html.Td(['R', html.Sub('0')]), html.Td(r_0)], style={'backgroundColor': 'red'}),
                  html.Tr([html.Td('q'), html.Td(q_parameter)])]
     else:
-        table = [html.Thead(html.Tr([html.Td('Parameter'), html.Td('Value')])),
-                 html.Tr([html.Td('R'), html.Td(r_0)]),
+        table = [html.Tr([html.Th('Parameter'), html.Th('Value')]),
+                 html.Tr([html.Td(['R', html.Sub('0')]), html.Td(r_0)]),
                  html.Tr([html.Td('q'), html.Td(q_parameter)])]
+
+    old_amounts['susceptible'] = simulation_data['groups']['susceptible']
+    old_amounts['dead'] = simulation_data['groups']['dead']
+    old_amounts['recovered'] = simulation_data['groups']['recovered']
 
     return table
 
