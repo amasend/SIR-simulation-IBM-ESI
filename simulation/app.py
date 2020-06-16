@@ -2,12 +2,15 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 from simulation import container
 from dash.dependencies import Input, Output, State
+from simulation import utils_parameters as up
+from plotly.subplots import make_subplots
 
 
-d = {'time': [], 'value': [], 'condition': []}
+d = {'susceptible': [], 'infected': [], 'recovered': [], 'dead': [], 'time': [], 'r0': []}
 
 old_amounts = {'susceptible': 0, 'dead': 0, 'recovered': 0, 'a_parameter': 0.0}
 
@@ -100,8 +103,8 @@ app.layout = html.Div([
                                            step=0.1,
                                            value=0.4,
                                            marks={
-                                                 0: {'label': '0'},
-                                                 1: {'label': '1'}
+                                               0: {'label': '0'},
+                                               1: {'label': '1'}
                                            })
                             ], style={'width': '80%'}),
                             html.Td([
@@ -357,9 +360,12 @@ def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_re
         return [False, d['time'][-1] + 1]
 
     if button_id == 'reset-button':
-        d['condition'].clear()
+        d['susceptible'].clear()
+        d['infected'].clear()
+        d['recovered'].clear()
+        d['dead'].clear()
         d['time'].clear()
-        d['value'].clear()
+        d['r0'].clear()
 
         box.population = 0
         box.initial_set_up(0, 0, 0, 0, 0, 0, 0, 0)
@@ -375,7 +381,7 @@ def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_re
 @app.callback(Output('live-population', 'figure'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_graph_live(n_intervals: int, simulation_data: dict) -> 'plotly_express.line':
+def update_graph_live(n_intervals: int, simulation_data: dict) -> 'plotly.scatter':
     """
     Function handling scatter graph for each individual instance move in
     grid.
@@ -390,32 +396,47 @@ def update_graph_live(n_intervals: int, simulation_data: dict) -> 'plotly_expres
 
     Returns
     -------
-    Return plolty express line chart with information of current amount of
+    Return plolty scatter chart with information of current amount of
     each group in simulation.
     """
 
     d['time'].append(n_intervals)
-    d['value'].append(simulation_data['groups']['susceptible'])
-    d['condition'].append('susceptible')
-    d['time'].append(n_intervals)
-    d['value'].append(simulation_data['groups']['infected'])
-    d['condition'].append('infected')
-    d['time'].append(n_intervals)
-    d['value'].append(simulation_data['groups']['recovered'])
-    d['condition'].append('recovered')
-    d['time'].append(n_intervals)
-    d['value'].append(simulation_data['groups']['dead'])
-    d['condition'].append('dead')
+    d['susceptible'].append(simulation_data['groups']['susceptible'])
+    d['infected'].append(simulation_data['groups']['infected'])
+    d['dead'].append(simulation_data['groups']['dead'])
+    d['recovered'].append(simulation_data['groups']['recovered'])
+    if len(r0_parameters) > 0:
+        d['r0'].append(sum(r0_parameters) / len(r0_parameters))
+    else:
+        d['r0'].append(0)
 
-    df = pd.DataFrame(data=d)
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-    fig = px.line(df, x='time', y='value', color='condition',
-                  color_discrete_map={
-                      'susceptible': 'blue',
-                      'infected': 'red',
-                      'recovered': 'green',
-                      'dead': 'gray'
-                  })
+    fig.add_trace(
+        go.Scatter(x=d['time'], y=d['susceptible'], name="susceptible", mode="lines", marker={'color': 'blue'}),
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(x=d['time'], y=d['infected'], name="infected", mode="lines", marker={'color': 'red'}),
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(x=d['time'], y=d['recovered'], name="recovered", mode="lines", marker={'color': 'green'}),
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(x=d['time'], y=d['dead'], name="dead", mode="lines", marker={'color': 'gray'}),
+        secondary_y=False,
+    )
+
+    fig.add_trace(
+        go.Scatter(x=d['time'], y=d['r0'], name="R<sub>0</sub>", mode="lines",
+                   marker={'color': 'gold'}, line={'dash': 'dash'}),
+        secondary_y=True,
+    )
 
     fig.update_layout({
         'title': {'text': 'Each group amount in given time of simulation',
@@ -427,6 +448,8 @@ def update_graph_live(n_intervals: int, simulation_data: dict) -> 'plotly_expres
     fig.update_traces({
         'marker': {'line': {'width': 26}}
     })
+    fig.update_yaxes(title_text="People amount", secondary_y=False)
+    fig.update_yaxes(title_text="R<sub>0</sub> value", secondary_y=True)
 
     return fig
 
@@ -535,7 +558,7 @@ def update_population_percent(n_intervals: int, simulation_data: dict) -> 'plotl
 @app.callback(Output('current-population-amount', 'children'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_population_amount(n_intervals: int, simulation_data: dict) -> 'html table':
+def update_population_amount(n_intervals: int, simulation_data: dict) -> 'html.Table':
     """
     Function handling display html table with amount of each group.
 
@@ -551,80 +574,18 @@ def update_population_amount(n_intervals: int, simulation_data: dict) -> 'html t
     Html table base od bash html.Table object.
     """
 
-    return [html.Tr([html.Th('Condition'), html.Th('Amount')]),
-            html.Tr([html.Td('Susceptible'), html.Td(simulation_data['groups']['susceptible'])]),
-            html.Tr([html.Td('Infected'), html.Td(simulation_data['groups']['infected'])]),
-            html.Tr([html.Td('Recovered'), html.Td(simulation_data['groups']['recovered'])]),
-            html.Tr([html.Td('Dead'), html.Td(simulation_data['groups']['dead'])])]
-
-
-def compute_r_parameter(ago_susceptible: int, current_susceptible: int, current_infected: int) -> float:
-    """
-    Function for compute infection ratio parameter based od SIR model.
-
-    Parameters
-    ----------
-    ago_susceptible: int, required
-        Amount of susceptible people one interval before current iteration.
-    current_susceptible: int, required
-        Amount of susceptible people in current interval.
-    current_infected: int, required
-        Amount of infected people in current interval.
-
-    Returns
-    -------
-    Returns value of infection ratio.
-
-    Example
-    -------
-    >>> compute_r_parameter(10, 9, 1)
-    """
-
-    d_susceptible = current_susceptible - ago_susceptible
-
-    return -d_susceptible * (1 / (current_susceptible * current_infected))
-
-
-def compute_a_parameter(ago_removed: int, current_removed: int, current_infected: int) -> float:
-    """
-    Function for compute recover rate value based od SIR model.
-
-    Parameters
-    ----------
-    ago_removed: int, required
-        Amount of recovered and dead people one interval before current iteration.
-    current_removed: int, required
-        Amount of recovered and dead people in current interval.
-    current_infected: int, required
-        Amount of infected people in current interval.
-
-    Returns
-    -------
-    Returns value of recover rate parameter.
-
-    Example
-    -------
-    >>> compute_a_parameter(0, 2, 10)
-    """
-
-    d_removed = current_removed - ago_removed
-
-    return d_removed * (1 / (current_removed * current_infected))
-
-
-def compute_r0_parameter(r_parameter: float, a_parameter: float, start_susceptible_amount: int) -> float:
-    return r_parameter * start_susceptible_amount / a_parameter
-
-
-def compute_q_parameter(r_parameter: float, a_parameter: float) -> float:
-    return r_parameter / a_parameter
+    return [html.Tr([html.Th('Condition', colSpan=2), html.Th('Amount')]),
+            html.Tr([html.Td('Susceptible', colSpan=2), html.Td(simulation_data['groups']['susceptible'])]),
+            html.Tr([html.Td('Infected', colSpan=2), html.Td(simulation_data['groups']['infected'])]),
+            html.Tr([html.Td('Recovered', colSpan=2), html.Td(simulation_data['groups']['recovered'])]),
+            html.Tr([html.Td('Dead', colSpan=2), html.Td(simulation_data['groups']['dead'])])]
 
 
 @app.callback(Output('additional-parameters', 'children'),
               [Input('interval-component', 'n_intervals'),
               Input('simulation-data', 'data')],
               [State('susceptible-amount', 'value')])
-def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount: int) -> 'html table':
+def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount: int) -> 'html.Table':
     """
     Function handling display html table with additional parameters q and R0.
 
@@ -643,7 +604,7 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
     """
 
     if simulation_data['groups']['susceptible'] > 0 and simulation_data['groups']['infected'] > 0:
-        r_parameter = compute_r_parameter(old_amounts['susceptible'],
+        r_parameter = up.compute_r_parameter(old_amounts['susceptible'],
                                           simulation_data['groups']['susceptible'],
                                           simulation_data['groups']['infected'])
 
@@ -653,10 +614,10 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
 
     if simulation_data['groups']['infected'] > 0 and simulation_data['groups']['dead'] > 0 or \
             simulation_data['groups']['recovered'] > 0:
-        a_parameter = compute_a_parameter(old_amounts['recovered'] + old_amounts['dead'],
-                                          simulation_data['groups']['recovered'] +
-                                          simulation_data['groups']['dead'],
-                                          simulation_data['groups']['infected'])
+        a_parameter = up.compute_a_parameter(old_amounts['recovered'] + old_amounts['dead'],
+                                             simulation_data['groups']['recovered'] +
+                                             simulation_data['groups']['dead'],
+                                             simulation_data['groups']['infected'])
 
         old_amounts['infected'] = simulation_data['groups']['infected']
         old_amounts['recovered'] = simulation_data['groups']['recovered']
@@ -665,11 +626,15 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
         if a_parameter > 0:
             old_amounts['a_parameter'] = a_parameter
 
-            q_parameters.append(compute_q_parameter(r_parameter, a_parameter))
-            r0_parameters.append(compute_r0_parameter(r_parameter, a_parameter, susceptible_amount))
+            q_parameters.append(up.compute_q_parameter(r_parameter, a_parameter))
+            r0_parameters.append(up.compute_r0_parameter(r_parameter, a_parameter,
+                                                         susceptible_amount))
         else:
-            q_parameters.append(compute_q_parameter(r_parameter, old_amounts['a_parameter']))
-            r0_parameters.append(compute_r0_parameter(r_parameter, old_amounts['a_parameter'], susceptible_amount))
+            q_parameters.append(up.compute_q_parameter(r_parameter,
+                                                       old_amounts['a_parameter']))
+            r0_parameters.append(up.compute_r0_parameter(r_parameter,
+                                                         old_amounts['a_parameter'],
+                                                         susceptible_amount))
 
         q_parameter = sum(q_parameters) / len(q_parameters)
         q_parameter = round(q_parameter, 2)
@@ -678,17 +643,18 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
 
         # Note: Pandemic R0 parameter highlight
         if r_0 > 1.5:
-            return [html.Tr([html.Th('Parameter'), html.Th('Value')]),
-                    html.Tr([html.Td(['R', html.Sub('0')]), html.Td(r_0)], style={'backgroundColor': 'red'}),
-                    html.Tr([html.Td('q'), html.Td(q_parameter)])]
+            return [html.Tr([html.Th('Parameter'), html.Th('Mean'), html.Th('Current')]),
+                    html.Tr([html.Td(['R', html.Sub('0')]), html.Td(r_0), html.Td(round(r0_parameters[-1], 2))],
+                            style={'backgroundColor': 'red'}),
+                    html.Tr([html.Td('q'), html.Td(q_parameter), html.Td(round(q_parameters[-1]))])]
         else:
-            return [html.Tr([html.Th('Parameter'), html.Th('Value')]),
-                    html.Tr([html.Td(['R', html.Sub('0')]), html.Td(r_0)]),
-                    html.Tr([html.Td('q'), html.Td(q_parameter)])]
+            return [html.Tr([html.Th('Parameter'), html.Th('Mean'), html.Th('Current')]),
+                    html.Tr([html.Td(['R', html.Sub('0')]), html.Td(r_0), html.Td(round(r0_parameters[-1], 2))]),
+                    html.Tr([html.Td('q'), html.Td(q_parameter), html.Td(round(q_parameters[-1]))])]
 
-    return [html.Tr([html.Th('Parameter'), html.Th('Value')]),
-            html.Tr([html.Td(['R', html.Sub('0')]), html.Td(0)]),
-            html.Tr([html.Td('q'), html.Td(0)])]
+    return [html.Tr([html.Th('Parameter'), html.Th('Mean'), html.Th('Current')]),
+                     html.Tr([html.Td(['R', html.Sub('0')]), html.Td(0), html.Td(0)]),
+                     html.Tr([html.Td('q'), html.Td(0), html.Td(0)])]
 
 
 if __name__ == '__main__':
