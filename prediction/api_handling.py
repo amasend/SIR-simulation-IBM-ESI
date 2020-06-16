@@ -9,6 +9,19 @@ import csv
 
 
 def get_countries_names() -> list:
+    """
+    Function for getting list of all countries names procived by public
+    COVID-19 api on site "https://api.covid19api.com"
+
+    Returns
+    -------
+    List with all countries names.
+
+    Example
+    -------
+    >>> countries_names = get_countries_names()
+    """
+
     countries_names = []
     url = "https://api.covid19api.com/countries"
 
@@ -24,6 +37,27 @@ def get_countries_names() -> list:
 
 
 def get_data_from_country(country_name: str, status: str) -> list:
+    """
+    Function for geting data from api for specific country.
+
+    Parameters
+    ----------
+    country_name: str, required
+        Name of countr to get data about. It must be slug value provided by
+        api site.
+    status: str, required
+        Status of witch group of people to get. Based on api documentation it
+        can be only: 'confirmed', 'recovered', 'deaths'.
+
+    Returns
+    -------
+    List with data from begining of virus in country of specified status.
+
+    Example
+    -------
+    >>> poland_data = get_data_from_country('poland', 'confirmed')
+    """
+
     url = f"https://api.covid19api.com/dayone/country/{country_name}/status/{status}"
 
     payload = {}
@@ -37,6 +71,24 @@ def get_data_from_country(country_name: str, status: str) -> list:
 
 
 def prepare_data_to_save(raw_data: list) -> list:
+    """
+    Change data from function get_data_from_country() to format ready to save as
+    .csv file.
+
+    Parameters
+    ----------
+    raw_data: list, required
+        List of data produced by get_data_from_country() function.
+
+    Returns
+    -------
+    List with changed data structure.
+
+    Example
+    -------
+    >>> prepare_data = prepare_data_to_save(poland_data)
+    """
+
     data = []
 
     for element in raw_data:
@@ -46,6 +98,26 @@ def prepare_data_to_save(raw_data: list) -> list:
 
 
 def save_to_csv(data: list, file_name: str) -> bool:
+    """
+    Saved given data to .csv file.
+
+    Parameters
+    ----------
+    data: list, required
+        Data produced by function prepare_data_to_save().
+    file_name: str, required
+        Path and file name to where save file. It should not include ".csv" at
+        the end.
+
+    Returns
+    -------
+    True if file created or false if not.
+
+    Example
+    -------
+    >>> save_to_csv(prepare_data, 'test')
+    """
+
     with open(f'{file_name}.csv', 'w+', newline='') as csvfile:
         fieldnames = ['name', 'date', 'amount']
         writer = csv.writer(csvfile)
@@ -58,14 +130,3 @@ def save_to_csv(data: list, file_name: str) -> bool:
         return True
     else:
         return False
-
-
-if __name__ == '__main__':
-    countries = get_countries_names()
-    print(countries)
-    # for country in countries:
-    #     result = get_data_from_country(country, 'confirmed')
-    #     save_to_csv(result, f'./countries_data/{country}')
-
-    result = get_data_from_country('poland', 'confirmed')
-    res = prepare_data_to_save(result)

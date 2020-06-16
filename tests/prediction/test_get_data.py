@@ -1,4 +1,5 @@
 import unittest
+import requests
 from prediction import api_handling
 
 
@@ -11,39 +12,59 @@ class GettingDataFromApiTestCase(unittest.TestCase):
         print("> (test 1) Function get_countries_names() correctly returns list "
               "with countries.")
 
-    def test_02__check_if_prepare_data_to_save_returns_dict(self):
-        raw_data = 'poland'
-        country_data = api_handling.prepare_data_to_save(raw_data)
+    def test_02__check_if_prepare_data_to_save_returns_list(self):
+        url = f"https://api.covid19api.com/dayone/country/poland/status/confirmed"
 
-        self.assertIsInstance(country_data, dict, msg="Function prepare_data_to_save() "
-                                                      "does not return a dictionary.")
-        print("> (test 2) Function prepare_data_to_save() returns dictionary.")
+        payload = {}
+        headers = {}
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        country_data = api_handling.prepare_data_to_save(response.json())
+
+        self.assertIsInstance(country_data, list, msg="Function prepare_data_to_save() "
+                                                      "does not return a list.")
+        print("> (test 2) Function prepare_data_to_save() returns list.")
 
     def test_03__check_if_prepare_data_to_save_correctly_returns_values(self):
-        country = 'poland'
-        country_data = api_handling.prepare_data_to_save(country, 'confirmed')
+        url = f"https://api.covid19api.com/dayone/country/poland/status/confirmed"
+
+        payload = {}
+        headers = {}
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        country_data = api_handling.prepare_data_to_save(response.json())
 
         self.assertGreater(len(country_data), 0, msg="Function prepare_data_to_save() "
                                                      "does not return values from correct country.")
         print("> (test 3) Function prepare_data_to_save() correctly get data form "
               "existing country.")
 
-    def test_04__check_if_prepare_data_to_save_returns_data_from_incorrect_country(self):
-        country = 'asdf'
-        country_data = api_handling.prepare_data_to_save(country, 'confirmed')
-
-        self.assertGreater(len(country_data), 0, msg="Function prepare_data_to_save() "
-                                                     "returns values from incorrect country.")
-
-        print("> (test 4) Function prepare_data_to_save() can not get data from "
-              "not existing country.")
-
-    def test_05__check_if_save_to_csv_correctly_create_csv_file(self):
-        data = {'name': ['poland'], 'date': ['2020.06.16'], 'confirmed': [12]}
+    def test_04__check_if_save_to_csv_correctly_create_csv_file(self):
+        data = [[1, 2, 3], [1, 2, 3]]
         self.assertTrue(api_handling.save_to_csv(data, 'simple'),
                         msg="Function save_to_csv() does not correctly save data.")
 
-        print("> (test 5) Function save_to_csv() correctly create .csv file.")
+        print("> (test 4) Function save_to_csv() correctly create .csv file.")
+
+    def test_05__check_if_prepare_data_to_save_correctly_change_input(self):
+        url = f"https://api.covid19api.com/dayone/country/poland/status/confirmed"
+
+        payload = {}
+        headers = {}
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+
+        data = response.json()
+
+        prepared_data = api_handling.prepare_data_to_save(data)
+
+        self.assertEqual(len(data), len(prepared_data), msg="Function prepare_data_to_save() "
+                                                            "incorrectly returns data.")
+
+        print("> (test 5) Function prepare_data_to_save() correctly change and output "
+              "given data.")
 
 
 if __name__ == '__main__':
