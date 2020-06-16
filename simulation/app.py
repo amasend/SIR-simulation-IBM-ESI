@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 from simulation import container
+from prediction import api_handling
 from dash.dependencies import Input, Output, State
 from simulation import utils_parameters as up
 from plotly.subplots import make_subplots
@@ -192,6 +193,7 @@ app.layout = html.Div([
             dcc.Graph(id='move-population'),
             dcc.Graph(id='population-percent'),
         ], style={'display': 'flex', 'justify-content': 'space-evenly', 'marginTop': '20px'}),
+        html.Div(dcc.Graph(id='real-data'), style={'width': '90%', 'margin': '20px auto'}),
         dcc.Store(id='simulation-data')
     ])
 
@@ -405,6 +407,7 @@ def update_graph_live(n_intervals: int, simulation_data: dict) -> 'plotly.scatte
     d['infected'].append(simulation_data['groups']['infected'])
     d['dead'].append(simulation_data['groups']['dead'])
     d['recovered'].append(simulation_data['groups']['recovered'])
+
     if len(r0_parameters) > 0:
         d['r0'].append(sum(r0_parameters) / len(r0_parameters))
     else:
@@ -558,7 +561,7 @@ def update_population_percent(n_intervals: int, simulation_data: dict) -> 'plotl
 @app.callback(Output('current-population-amount', 'children'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_population_amount(n_intervals: int, simulation_data: dict) -> 'html.Table':
+def update_population_amount(n_intervals: int, simulation_data: dict) -> list:
     """
     Function handling display html table with amount of each group.
 
@@ -585,7 +588,7 @@ def update_population_amount(n_intervals: int, simulation_data: dict) -> 'html.T
               [Input('interval-component', 'n_intervals'),
               Input('simulation-data', 'data')],
               [State('susceptible-amount', 'value')])
-def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount: int) -> 'html.Table':
+def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount: int) -> list:
     """
     Function handling display html table with additional parameters q and R0.
 
@@ -605,8 +608,8 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
 
     if simulation_data['groups']['susceptible'] > 0 and simulation_data['groups']['infected'] > 0:
         r_parameter = up.compute_r_parameter(old_amounts['susceptible'],
-                                          simulation_data['groups']['susceptible'],
-                                          simulation_data['groups']['infected'])
+                                             simulation_data['groups']['susceptible'],
+                                             simulation_data['groups']['infected'])
 
         old_amounts['susceptible'] = simulation_data['groups']['susceptible']
     else:
@@ -653,8 +656,47 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
                     html.Tr([html.Td('q'), html.Td(q_parameter), html.Td(round(q_parameters[-1]))])]
 
     return [html.Tr([html.Th('Parameter'), html.Th('Mean'), html.Th('Current')]),
-                     html.Tr([html.Td(['R', html.Sub('0')]), html.Td(0), html.Td(0)]),
-                     html.Tr([html.Td('q'), html.Td(0), html.Td(0)])]
+            html.Tr([html.Td(['R', html.Sub('0')]), html.Td(0), html.Td(0)]),
+            html.Tr([html.Td('q'), html.Td(0), html.Td(0)])]
+
+
+@app.callback(Output('real-data', 'figure'),
+              [Input('simulation-data', 'data')])
+def create_plot_with_real_data(d):
+    infected = api_handling.get_data_from_country('ukraine', 'confirmed')
+    deaths = api_handling.get_data_from_country('ukraine', 'deaths')
+    recovered = api_handling.get_data_from_country('ukraine', 'recovered')
+    tab = {'date': [], 'amount': [], 'condition': []}
+
+    for element in infected:
+        tab['date'].append(element['Date'])
+        tab['amount'].append(element['Cases'])
+        tab['condition'].append('infected')
+
+    for element in recovered:
+        tab['date'].append(element['Date'])
+        tab['amount'].append(element['Cases'])
+        tab['condition'].append('recovered')
+
+    for element in deaths:
+        tab['date'].append(element['Date'])
+        tab['amount'].append(element['Cases'])
+        tab['condition'].append('dead')
+
+    df = pd.DataFrame(data=tab)
+
+    fig = px.line(df, x='date', y='amount', color='condition',
+                  color_discrete_map={
+                     'susceptible': 'blue',
+                     'infected': 'red',
+                     'recovered': 'green',
+                     'dead': 'gray'
+                  }, category_orders={'condition': ['infected', 'recovered', 'dead']})
+
+    fig.update_layout({'title': {'text': 'COVID-19 real data for Ukraine', 'font': {'size': 30}},
+                       'template': 'plotly_dark'})
+
+    return fig
 
 
 if __name__ == '__main__':
