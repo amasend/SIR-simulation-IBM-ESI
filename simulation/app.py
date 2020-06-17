@@ -383,7 +383,7 @@ def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_re
 @app.callback(Output('live-population', 'figure'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_graph_live(n_intervals: int, simulation_data: dict) -> 'plotly.scatter':
+def update_graph_live(n_intervals: int, simulation_data: dict) -> 'go.Scatter':
     """
     Function handling scatter graph for each individual instance move in
     grid.
@@ -460,7 +460,7 @@ def update_graph_live(n_intervals: int, simulation_data: dict) -> 'plotly.scatte
 @app.callback(Output('move-population', 'figure'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_graph_move(n_intervals: int, simulation_data: dict) -> 'plotly.express.scatter':
+def update_graph_move(n_intervals: int, simulation_data: dict) -> 'px.scatter':
     """
     Function handling scatter graph for each individual instance move in
     grid.
@@ -519,7 +519,7 @@ def update_graph_move(n_intervals: int, simulation_data: dict) -> 'plotly.expres
 @app.callback(Output('population-percent', 'figure'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_population_percent(n_intervals: int, simulation_data: dict) -> 'plotly.express.pie':
+def update_population_percent(n_intervals: int, simulation_data: dict) -> 'px.pie':
     """
     Function handling pie chart with percent value of each group in population.
 
@@ -529,7 +529,7 @@ def update_population_percent(n_intervals: int, simulation_data: dict) -> 'plotl
         Number of past intervals.
     simulation_data: dict, required
         Dictionary contain data of simulation..
-        
+
     Returns
     -------
     Plotly express object pie chart.
@@ -700,4 +700,4 @@ def create_plot_with_real_data(d):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, host='0.0.0.0')
