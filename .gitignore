@@ -130,3 +130,6 @@ dmypy.json
 
 # PyCharm files
 .idea
+
+# Files contains real data of COVID-19
+prediction/countries_data/*
