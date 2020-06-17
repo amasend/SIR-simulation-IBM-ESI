@@ -381,7 +381,7 @@ def simulation_controls(btn_start: int, btn_continue: int, btn_stop: int, btn_re
 @app.callback(Output('live-population', 'figure'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_graph_live(n_intervals: int, simulation_data: dict) -> 'plotly.scatter':
+def update_graph_live(n_intervals: int, simulation_data: dict) -> 'go.Scatter':
     """
     Function handling scatter graph for each individual instance move in
     grid.
@@ -457,7 +457,7 @@ def update_graph_live(n_intervals: int, simulation_data: dict) -> 'plotly.scatte
 @app.callback(Output('move-population', 'figure'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_graph_move(n_intervals: int, simulation_data: dict) -> 'plotly.express.scatter':
+def update_graph_move(n_intervals: int, simulation_data: dict) -> 'px.scatter':
     """
     Function handling scatter graph for each individual instance move in
     grid.
@@ -516,7 +516,7 @@ def update_graph_move(n_intervals: int, simulation_data: dict) -> 'plotly.expres
 @app.callback(Output('population-percent', 'figure'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_population_percent(n_intervals: int, simulation_data: dict) -> 'plotly.express.pie':
+def update_population_percent(n_intervals: int, simulation_data: dict) -> 'px.pie':
     """
     Function handling pie chart with percent value of each group in population.
 
@@ -558,7 +558,7 @@ def update_population_percent(n_intervals: int, simulation_data: dict) -> 'plotl
 @app.callback(Output('current-population-amount', 'children'),
               [Input('interval-component', 'n_intervals'),
                Input('simulation-data', 'data')])
-def update_population_amount(n_intervals: int, simulation_data: dict) -> 'html.Table':
+def update_population_amount(n_intervals: int, simulation_data: dict) -> list:
     """
     Function handling display html table with amount of each group.
 
@@ -571,7 +571,7 @@ def update_population_amount(n_intervals: int, simulation_data: dict) -> 'html.T
 
     Returns
     -------
-    Html table base od bash html.Table object.
+    List with html table components from html.Table object.
     """
 
     return [html.Tr([html.Th('Condition', colSpan=2), html.Th('Amount')]),
@@ -585,7 +585,7 @@ def update_population_amount(n_intervals: int, simulation_data: dict) -> 'html.T
               [Input('interval-component', 'n_intervals'),
               Input('simulation-data', 'data')],
               [State('susceptible-amount', 'value')])
-def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount: int) -> 'html.Table':
+def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount: int) -> list:
     """
     Function handling display html table with additional parameters q and R0.
 
@@ -600,13 +600,13 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
 
     Returns
     -------
-    Html table base od bash html.Table object with parameter q and R0.
+    List with html table components form html.Table object with parameter q and R0.
     """
 
     if simulation_data['groups']['susceptible'] > 0 and simulation_data['groups']['infected'] > 0:
         r_parameter = up.compute_r_parameter(old_amounts['susceptible'],
-                                          simulation_data['groups']['susceptible'],
-                                          simulation_data['groups']['infected'])
+                                             simulation_data['groups']['susceptible'],
+                                             simulation_data['groups']['infected'])
 
         old_amounts['susceptible'] = simulation_data['groups']['susceptible']
     else:
@@ -653,8 +653,8 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
                     html.Tr([html.Td('q'), html.Td(q_parameter), html.Td(round(q_parameters[-1]))])]
 
     return [html.Tr([html.Th('Parameter'), html.Th('Mean'), html.Th('Current')]),
-                     html.Tr([html.Td(['R', html.Sub('0')]), html.Td(0), html.Td(0)]),
-                     html.Tr([html.Td('q'), html.Td(0), html.Td(0)])]
+            html.Tr([html.Td(['R', html.Sub('0')]), html.Td(0), html.Td(0)]),
+            html.Tr([html.Td('q'), html.Td(0), html.Td(0)])]
 
 
 if __name__ == '__main__':
