@@ -526,7 +526,7 @@ def update_population_percent(n_intervals: int, simulation_data: dict) -> 'px.pi
         Number of past intervals.
     simulation_data: dict, required
         Dictionary contain data of simulation..
-        
+
     Returns
     -------
     Plotly express object pie chart.
