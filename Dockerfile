@@ -10,6 +10,6 @@ COPY . .
 
 ENV PYTHONPATH "${PYTHONPATH}:/usr/src/app"
 
-EXPOSE 8080
+EXPOSE 8050
 
 CMD [ "python", "./simulation/app.py" ]

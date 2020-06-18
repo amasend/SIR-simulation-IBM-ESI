@@ -662,42 +662,70 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
 
 @app.callback(Output('real-data', 'figure'),
               [Input('simulation-data', 'data')])
-def create_plot_with_real_data(d):
-    infected = api_handling.get_data_from_country('ukraine', 'confirmed')
-    deaths = api_handling.get_data_from_country('ukraine', 'deaths')
-    recovered = api_handling.get_data_from_country('ukraine', 'recovered')
+def create_plot_with_real_data(data) -> 'px.line':
+    """
+    Function that get real data from https://covid19api.com and display it.
+    Include attempt to implement machine learning prediction.
+
+    Parameters
+    ----------
+    data: optional
+        Input trigger for displaying plot.
+
+    Returns
+    -------
+    Plotly express line chart.
+    """
+
+    country = 'Germany'
+    total_data = api_handling.get_data_from_country(country)
+
     tab = {'date': [], 'amount': [], 'condition': []}
 
-    for element in infected:
+    for element in total_data:
         tab['date'].append(element['Date'])
-        tab['amount'].append(element['Cases'])
-        tab['condition'].append('infected')
+        tab['amount'].append(element['Active'])
+        tab['condition'].append('active')
 
-    for element in recovered:
+    for element in total_data:
         tab['date'].append(element['Date'])
-        tab['amount'].append(element['Cases'])
+        tab['amount'].append(element['Recovered'])
         tab['condition'].append('recovered')
 
-    for element in deaths:
+    for element in total_data:
         tab['date'].append(element['Date'])
-        tab['amount'].append(element['Cases'])
+        tab['amount'].append(element['Deaths'])
         tab['condition'].append('dead')
+
+    for element in total_data:
+        tab['date'].append(element['Date'])
+        tab['amount'].append(element['Confirmed'])
+        tab['condition'].append('confirmed')
 
     df = pd.DataFrame(data=tab)
 
     fig = px.line(df, x='date', y='amount', color='condition',
                   color_discrete_map={
-                     'susceptible': 'blue',
-                     'infected': 'red',
+                     'confirmed': 'gold',
+                     'active': 'red',
                      'recovered': 'green',
                      'dead': 'gray'
                   }, category_orders={'condition': ['infected', 'recovered', 'dead']})
 
-    fig.update_layout({'title': {'text': 'COVID-19 real data for Ukraine', 'font': {'size': 30}},
+    fig.update_layout({'title': {'text': f'COVID-19 real data for {country}', 'font': {'size': 30}},
                        'template': 'plotly_dark'})
+
+    # Note: Add prediction value based on machine learning model
+    fig.add_scatter(y=[19256], x=['2020-06-18T00:00:00Z'],
+                    marker={'size': 12},
+                    name='prediction',
+                    mode='markers+text',
+                    text=['19256'],
+                    textposition='top center')
+    # -- end note
 
     return fig
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0')
+    app.run_server(debug=True)

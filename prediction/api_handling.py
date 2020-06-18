@@ -36,7 +36,7 @@ def get_countries_names() -> list:
     return countries_names
 
 
-def get_data_from_country(country_name: str, status: str) -> list:
+def get_data_from_country(country_name: str) -> list:
     """
     Function for geting data from api for specific country.
 
@@ -45,9 +45,6 @@ def get_data_from_country(country_name: str, status: str) -> list:
     country_name: str, required
         Name of countr to get data about. It must be slug value provided by
         api site.
-    status: str, required
-        Status of witch group of people to get. Based on api documentation it
-        can be only: 'confirmed', 'recovered', 'deaths'.
 
     Returns
     -------
@@ -55,10 +52,10 @@ def get_data_from_country(country_name: str, status: str) -> list:
 
     Example
     -------
-    >>> poland_data = get_data_from_country('poland', 'confirmed')
+    >>> poland_data = get_data_from_country('poland')
     """
 
-    url = f"https://api.covid19api.com/dayone/country/{country_name}/status/{status}"
+    url = f"https://api.covid19api.com/total/dayone/country/{country_name}"
 
     payload = {}
     headers = {}
@@ -70,7 +67,7 @@ def get_data_from_country(country_name: str, status: str) -> list:
     return data
 
 
-def prepare_data_to_save(raw_data: list) -> list:
+def prepare_data_to_save(raw_data: list, status: str) -> list:
     """
     Change data from function get_data_from_country() to format ready to save as
     .csv file.
@@ -79,6 +76,8 @@ def prepare_data_to_save(raw_data: list) -> list:
     ----------
     raw_data: list, required
         List of data produced by get_data_from_country() function.
+    status: str, required
+        Status of group to get, it could be Confirmed, Active, Deaths, Recovered.
 
     Returns
     -------
@@ -86,13 +85,13 @@ def prepare_data_to_save(raw_data: list) -> list:
 
     Example
     -------
-    >>> prepare_data = prepare_data_to_save(poland_data)
+    >>> prepare_data = prepare_data_to_save(poland_data, 'Active')
     """
 
     data = []
 
     for element in raw_data:
-        data.append([element['Country'], element['Date'], element['Cases']])
+        data.append([element['Country'], element['Date'], element[status]])
 
     return data
 
