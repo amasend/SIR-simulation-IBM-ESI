@@ -574,7 +574,7 @@ def update_population_amount(n_intervals: int, simulation_data: dict) -> list:
 
     Returns
     -------
-    Html table base od bash html.Table object.
+    List with html table components from html.Table object.
     """
 
     return [html.Tr([html.Th('Condition', colSpan=2), html.Th('Amount')]),
@@ -603,7 +603,7 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
 
     Returns
     -------
-    Html table base od bash html.Table object with parameter q and R0.
+    List with html table components form html.Table object with parameter q and R0.
     """
 
     if simulation_data['groups']['susceptible'] > 0 and simulation_data['groups']['infected'] > 0:
@@ -658,6 +658,7 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
     return [html.Tr([html.Th('Parameter'), html.Th('Mean'), html.Th('Current')]),
             html.Tr([html.Td(['R', html.Sub('0')]), html.Td(0), html.Td(0)]),
             html.Tr([html.Td('q'), html.Td(0), html.Td(0)])]
+
 
 
 @app.callback(Output('real-data', 'figure'),
@@ -725,6 +726,7 @@ def create_plot_with_real_data(data) -> 'px.line':
     # -- end note
 
     return fig
+
 
 
 if __name__ == '__main__':
