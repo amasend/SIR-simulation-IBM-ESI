@@ -13,6 +13,9 @@ Welcome to SIR simulation IBM ESI's documentation!
    population/index
    population/population
    population/user_interface
+   population/simulation_utils
+   population/api_handling
+   population/visualization
 
 Indices and tables
 ==================

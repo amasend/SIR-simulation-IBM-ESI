@@ -5,6 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 from simulation import container
+from prediction import api_handling
 from dash.dependencies import Input, Output, State
 from simulation import utils_parameters as up
 from plotly.subplots import make_subplots
@@ -192,6 +193,7 @@ app.layout = html.Div([
             dcc.Graph(id='move-population'),
             dcc.Graph(id='population-percent'),
         ], style={'display': 'flex', 'justify-content': 'space-evenly', 'marginTop': '20px'}),
+        html.Div(dcc.Graph(id='real-data'), style={'width': '90%', 'margin': '20px auto'}),
         dcc.Store(id='simulation-data')
     ])
 
@@ -405,6 +407,7 @@ def update_graph_live(n_intervals: int, simulation_data: dict) -> 'go.Scatter':
     d['infected'].append(simulation_data['groups']['infected'])
     d['dead'].append(simulation_data['groups']['dead'])
     d['recovered'].append(simulation_data['groups']['recovered'])
+
     if len(r0_parameters) > 0:
         d['r0'].append(sum(r0_parameters) / len(r0_parameters))
     else:
@@ -655,6 +658,75 @@ def parameter_update(n_intervals: int, simulation_data: dict, susceptible_amount
     return [html.Tr([html.Th('Parameter'), html.Th('Mean'), html.Th('Current')]),
             html.Tr([html.Td(['R', html.Sub('0')]), html.Td(0), html.Td(0)]),
             html.Tr([html.Td('q'), html.Td(0), html.Td(0)])]
+
+
+
+@app.callback(Output('real-data', 'figure'),
+              [Input('simulation-data', 'data')])
+def create_plot_with_real_data(data) -> 'px.line':
+    """
+    Function that get real data from https://covid19api.com and display it.
+    Include attempt to implement machine learning prediction.
+
+    Parameters
+    ----------
+    data: optional
+        Input trigger for displaying plot.
+
+    Returns
+    -------
+    Plotly express line chart.
+    """
+
+    country = 'Germany'
+    total_data = api_handling.get_data_from_country(country)
+
+    tab = {'date': [], 'amount': [], 'condition': []}
+
+    for element in total_data:
+        tab['date'].append(element['Date'])
+        tab['amount'].append(element['Active'])
+        tab['condition'].append('active')
+
+    for element in total_data:
+        tab['date'].append(element['Date'])
+        tab['amount'].append(element['Recovered'])
+        tab['condition'].append('recovered')
+
+    for element in total_data:
+        tab['date'].append(element['Date'])
+        tab['amount'].append(element['Deaths'])
+        tab['condition'].append('dead')
+
+    for element in total_data:
+        tab['date'].append(element['Date'])
+        tab['amount'].append(element['Confirmed'])
+        tab['condition'].append('confirmed')
+
+    df = pd.DataFrame(data=tab)
+
+    fig = px.line(df, x='date', y='amount', color='condition',
+                  color_discrete_map={
+                     'confirmed': 'gold',
+                     'active': 'red',
+                     'recovered': 'green',
+                     'dead': 'gray'
+                  }, category_orders={'condition': ['infected', 'recovered', 'dead']})
+
+    fig.update_layout({'title': {'text': f'COVID-19 real data for {country}', 'font': {'size': 30}},
+                       'template': 'plotly_dark'})
+
+    # Note: Add prediction value based on machine learning model
+    fig.add_scatter(y=[19256], x=['2020-06-18T00:00:00Z'],
+                    marker={'size': 12},
+                    name='prediction',
+                    mode='markers+text',
+                    text=['19256'],
+                    textposition='top center')
+    # -- end note
+
+    return fig
+
 
 
 if __name__ == '__main__':
