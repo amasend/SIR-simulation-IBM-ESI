@@ -23,7 +23,7 @@ setuptools.setup(
         'plotly==4.8.1',
         'dash==1.12.0',
         'pandas==1.0.3',
-        'requests==2.23.0',
+        'requests==2.31.0',
         'sphinx==3.0.3'
     ],
     url="https://github.com/amasend/SIR-simulation-IBM-ESI",
